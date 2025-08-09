@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from '@mui/material/styles';
 import { AuthProvider } from './context/AuthContext';
 import { SlackProvider } from './context/SlackContext';
+import { GlobalLoadingProvider } from './context/GlobalLoadingContext';
 import ThirdPartyScriptHandler from './components/ThirdPartyScriptHandler';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from '@/components/ui/sonner';
@@ -26,11 +27,12 @@ function App() {
     <ThemeProvider theme={theme}>
       <Router>
         <AuthProvider>
-          <SlackProvider>
-            {/* This component handles third-party script errors */}
-            <ThirdPartyScriptHandler />
-            <Toaster position="top-right" />
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
+          <GlobalLoadingProvider>
+            <SlackProvider>
+              {/* This component handles third-party script errors */}
+              <ThirdPartyScriptHandler />
+              <Toaster position="top-right" />
+              <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -57,8 +59,9 @@ function App() {
               
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </div>
-          </SlackProvider>
+              </div>
+            </SlackProvider>
+          </GlobalLoadingProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

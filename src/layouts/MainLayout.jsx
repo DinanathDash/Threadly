@@ -1,102 +1,181 @@
-import { Outlet } from 'react-router-dom';
+import React from 'react';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { useSlack } from '../context/SlackContext';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarProvider } from '@/components/ui/sidebar';
+import { useGlobalLoading } from '../context/GlobalLoadingContext';
 import { Button } from '@/components/ui/button';
-import { Home, MessageCircle, Calendar, LogOut, Search, Plus, Hash, ChevronDown } from 'lucide-react';
-import { ChannelItem } from '@/components/ui/channel-item';
+import { 
+  Home, 
+  MessageCircle, 
+  Calendar, 
+  LogOut, 
+  Search, 
+  Plus, 
+  Hash, 
+  ChevronDown,
+  Bell
+} from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import Logo from '@/assets/Logo.svg';
+import InlineLoader from '@/components/ui/inline-loader';
 
 export default function MainLayout() {
   const { isConnected, slackWorkspace, disconnectSlack } = useSlack();
+  const { showLoading, hideLoading } = useGlobalLoading();
   const [channelSectionsExpanded, setChannelSectionsExpanded] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handlePageAction = async (action) => {
+    setIsLoading(true);
+    // Simulate API call or data loading
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsLoading(false);
+    // Continue with action...
+  };
 
   return (
-    <div className="min-h-screen flex">
-      <SidebarProvider defaultOpen>
-        <Sidebar className="border-r border-border bg-slate-800 text-white">
-          <SidebarHeader className="pb-2">
-            <div className="flex items-center justify-between px-3 py-2">
-              <h1 className="text-xl font-bold flex items-center gap-2">
-                <span className="text-white">Threadly</span>
-                <button className="w-5 h-5 rounded hover:bg-slate-700 flex items-center justify-center">
-                  <ChevronDown className="h-3 w-3 text-slate-300" />
-                </button>
-              </h1>
-            </div>
-            {isConnected && (
-              <div className="bg-slate-700 mx-3 rounded p-1.5 flex items-center gap-2 text-sm text-slate-300 hover:bg-slate-600 transition-colors cursor-pointer">
-                <Search className="h-3.5 w-3.5" />
-                <span className="flex-1">Search {slackWorkspace?.name}</span>
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
+      {/* Top Header Bar */}
+      <header className="h-14 flex items-center justify-between px-4 border-b border-gray-600">
+        <div className="flex items-center">
+          <img src={Logo} alt="Threadly Logo" className="h-8 w-auto mr-2" />
+        </div>
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" className="text-white hover:bg-indigo-600">
+            <Bell size={18} />
+          </Button>
+          <Avatar className="h-8 w-8 bg-white">
+            <span className="text-xs font-medium text-indigo-700">TD</span>
+          </Avatar>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-60 bg-[#F5F5F5] flex flex-col overflow-hidden border-r border-gray-200">
+          {/* Workspace Selector */}
+          <div className="p-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="font-medium text-[#000000]">{slackWorkspace?.name || 'Workspace'}</span>
+                <ChevronDown className="h-4 w-4 text-[#6B6B6B] ml-1" />
               </div>
-            )}
-          </SidebarHeader>
-          <SidebarContent className="pt-3">
-            <div className="flex flex-col space-y-2 px-2">
-              <ChannelItem
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-[#EAEAEA] hover:bg-gray-300">
+                <Plus size={16} className="text-[#6B6B6B]" />
+              </Button>
+            </div>
+            <div className="mt-3 relative">
+              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-[#6B6B6B]" />
+              <input 
+                type="text" 
+                placeholder="Search Threadly"
+                className="w-full bg-white border border-gray-300 text-[#000000] pl-9 pr-3 py-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-700"
+              />
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex-1 overflow-y-auto py-3 scrollbar-thin">
+            <nav className="px-2 space-y-1">
+              <NavLink
                 to="/dashboard"
-                icon={<Home className="h-4 w-4" />}
-                label="Home"
-              />
-              <ChannelItem
+                className={({ isActive }) => 
+                  `flex items-center gap-2 px-3 py-2 rounded text-sm ${
+                    isActive 
+                      ? 'bg-indigo-700 text-white' 
+                      : 'text-[#000000] hover:bg-[#EAEAEA]'
+                  }`
+                }
+              >
+                <Home size={18} />
+                <span>Dashboard</span>
+              </NavLink>
+              
+              <NavLink
                 to="/send-message"
-                icon={<MessageCircle className="h-4 w-4" />}
-                label="Send Message"
-              />
-              <ChannelItem
+                className={({ isActive }) => 
+                  `flex items-center gap-2 px-3 py-2 rounded text-sm ${
+                    isActive 
+                      ? 'bg-indigo-700 text-white' 
+                      : 'text-[#000000] hover:bg-[#EAEAEA]'
+                  }`
+                }
+              >
+                <MessageCircle size={18} />
+                <span>Send Message</span>
+              </NavLink>
+              
+              <NavLink
                 to="/scheduled"
-                icon={<Calendar className="h-4 w-4" />}
-                label="Scheduled Messages"
-              />
+                className={({ isActive }) => 
+                  `flex items-center gap-2 px-3 py-2 rounded text-sm ${
+                    isActive 
+                      ? 'bg-indigo-700 text-white' 
+                      : 'text-[#000000] hover:bg-[#EAEAEA]'
+                  }`
+                }
+              >
+                <Calendar size={18} />
+                <span>Scheduled Messages</span>
+              </NavLink>
+            </nav>
+            
+            {/* Channel Section */}
+            <div className="mt-6 px-2">
+              <button
+                onClick={() => setChannelSectionsExpanded(!channelSectionsExpanded)}
+                className="flex items-center justify-between w-full text-xs px-2 py-1 text-gray-500 hover:text-gray-700"
+              >
+                <span>Channels</span>
+                <ChevronDown className={`h-3 w-3 ${channelSectionsExpanded ? '' : 'transform -rotate-90'}`} />
+              </button>
 
-              {/* Channel Section */}
-              <div className="mt-4">
-                <button
-                  onClick={() => setChannelSectionsExpanded(!channelSectionsExpanded)}
-                  className="flex items-center justify-between w-full text-xs text-slate-400 hover:text-slate-200 px-2 py-1"
-                >
-                  <span>Channels</span>
-                  <ChevronDown className={`h-3 w-3 ${channelSectionsExpanded ? '' : 'transform -rotate-90'}`} />
-                </button>
-
-                {channelSectionsExpanded && (
-                  <div className="mt-1 space-y-0.5">
-                    <ChannelItem
-                      icon={<Hash className="h-4 w-4" />}
-                      label="design"
-                      onClick={() => { }}
-                    />
-                    <ChannelItem
-                      icon={<Hash className="h-4 w-4" />}
-                      label="marketing"
-                      onClick={() => { }}
-                    />
-                    <ChannelItem
-                      icon={<Hash className="h-4 w-4" />}
-                      label="general"
-                      onClick={() => { }}
-                    />
-                  </div>
-                )}
-              </div>
+              {channelSectionsExpanded && (
+                <div className="mt-1 space-y-1">
+                  <button className="flex items-center gap-2 px-3 py-1 rounded text-sm w-full text-left text-gray-600 hover:bg-[#EAEAEA]">
+                    <Hash size={16} />
+                    <span>design</span>
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-1 rounded text-sm w-full text-left text-gray-600 hover:bg-[#EAEAEA]">
+                    <Hash size={16} />
+                    <span>marketing</span>
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-1 rounded text-sm w-full text-left text-gray-600 hover:bg-[#EAEAEA]">
+                    <Hash size={16} />
+                    <span>general</span>
+                  </button>
+                </div>
+              )}
             </div>
-          </SidebarContent>
-          <SidebarFooter>
+          </div>
+          
+          {/* Footer with Disconnect Button */}
+          <div className="p-3 border-t border-gray-200">
             {isConnected && (
               <Button
                 variant="destructive"
-                className="w-full flex items-center gap-2"
-                onClick={disconnectSlack}>
+                className="w-full flex items-center gap-2 bg-red-600 hover:bg-red-700 text-sm"
+                onClick={disconnectSlack}
+              >
                 <LogOut className="h-4 w-4" />
                 Disconnect Slack
               </Button>
             )}
-          </SidebarFooter>
-        </Sidebar>
-      </SidebarProvider>
+          </div>
+        </aside>
 
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 p-6">
-          <Outlet />
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto relative">
+          <div className="max-w-6xl mx-auto p-6">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full py-20">
+                <InlineLoader color="#4A154B" size="60px" />
+                <p className="mt-4 text-gray-600">Loading content...</p>
+              </div>
+            ) : (
+              <Outlet />
+            )}
+          </div>
         </main>
       </div>
     </div>

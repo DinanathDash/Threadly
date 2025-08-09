@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import Logo from '../assets/Logo.svg';
 import Silk from '@/components/ui/silk';
+import LoadingScreen from '@/components/LoadingScreen';
 
 const LoginPage = () => {
     const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
@@ -150,6 +151,7 @@ const LoginPage = () => {
 
     return (
         <div className="flex min-h-screen">
+            {loading && <LoadingScreen message="Authenticating..." />}
             {/* Left panel - form */}
             <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8 bg-white">
                 <div className="w-full max-w-md login-card">

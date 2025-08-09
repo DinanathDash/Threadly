@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { setupCorsProxy } from '../services/corsProxy';
 import { useAuth } from './AuthContext';
+import { useGlobalLoading } from './GlobalLoadingContext';
 
 const SlackContext = createContext();
 
@@ -18,6 +19,7 @@ export function SlackProvider({ children }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const globalLoading = useGlobalLoading();
 
   // Setup CORS proxy handler and check if user has connected Slack workspace
   useEffect(() => {
@@ -81,6 +83,8 @@ export function SlackProvider({ children }) {
       setIsOAuthInProgress(true);
       setIsLoading(true);
       setError(null);
+      globalLoading.showLoading("Connecting to Slack...");
+      showLoading('Connecting to Slack workspace...');
       
       // Add this code to the processed set
       processedCodes.current.add(code);
@@ -144,6 +148,7 @@ export function SlackProvider({ children }) {
     } finally {
       setIsLoading(false);
       setIsOAuthInProgress(false);
+      globalLoading.hideLoading();
       
       // Clear processed codes after 30 seconds to allow retries
       setTimeout(() => {

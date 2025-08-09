@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSlack } from '@/context/SlackContext';
 import { getSlackChannels } from '@/services/slackService';
 import { sendImmediateMessage, scheduleMessage } from '@/services/messageService';
+import InlineLoader from '@/components/ui/inline-loader';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,19 +141,19 @@ export default function SendMessagePage() {
       
       <Card className="border-none shadow-md overflow-hidden">
         <form onSubmit={handleSubmit}>
-          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center">
                   {isScheduled ? (
-                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <Calendar className="h-5 w-5 text-indigo-700" />
                   ) : (
-                    <SendIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <SendIcon className="h-5 w-5 text-indigo-700" />
                   )}
                 </div>
                 <span>Message Details</span>
               </CardTitle>
-              <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
                 <Label htmlFor="scheduled" className="text-sm font-normal cursor-pointer select-none">
                   Schedule for later
                 </Label>
@@ -183,12 +184,14 @@ export default function SendMessagePage() {
                 onValueChange={setSelectedChannel}
                 disabled={loadingChannels}
               >
-                <SelectTrigger id="channel" className="bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700">
+                <SelectTrigger id="channel" className="bg-white border-slate-300">
                   <SelectValue placeholder="Select a channel" />
                 </SelectTrigger>
                 <SelectContent>
                   {loadingChannels ? (
-                    <div className="p-2 text-center text-slate-500">Loading channels...</div>
+                    <div className="p-2 text-center">
+                      <InlineLoader color="#4A154B" />
+                    </div>
                   ) : channels.length > 0 ? (
                     channels.map(channel => (
                       <SelectItem key={channel.id} value={channel.id}>
@@ -295,19 +298,19 @@ export default function SendMessagePage() {
             )}
           </CardContent>
           
-          <CardFooter className="flex justify-between bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 py-4">
+          <CardFooter className="flex justify-between bg-slate-50 border-t border-slate-200 py-4">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => navigate('/dashboard')}
-              className="border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="border-slate-300 hover:bg-slate-100"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={sending}
-              className={`${isScheduled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+              className={`${isScheduled ? 'bg-indigo-700 hover:bg-indigo-800' : 'bg-indigo-700 hover:bg-indigo-800'}`}
             >
               {sending ? (
                 <div className="flex items-center gap-2">

@@ -1,12 +1,13 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoadingScreen from '@/components/LoadingScreen';
 
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
 
-  // If auth is still loading, show nothing or a loading spinner
+  // If auth is still loading, show our full screen loading component
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <LoadingScreen message="Authenticating..." />;
   }
 
   // If not logged in, redirect to login

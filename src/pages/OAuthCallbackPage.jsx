@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useSlack } from '@/context/SlackContext';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -102,10 +102,7 @@ export default function OAuthCallbackPage() {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-xl">Connecting to Slack...</p>
-        </div>
+        <LoadingScreen message="Connecting to Slack..." />
       )}
     </div>
   );
