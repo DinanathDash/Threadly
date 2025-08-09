@@ -1,0 +1,141 @@
+/* Subtle animations for UI elements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Apply animations to login form elements */
+.login-form-element {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.login-form-element:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.login-form-element:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* Subtle pulse animation for buttons */
+@keyframes subtlePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(135, 96, 247, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(135, 96, 247, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(135, 96, 247, 0);
+  }
+}
+
+.pulse-on-hover:hover {
+  animation: subtlePulse 1.5s infinite;
+}
+
+/* Card appearance animation */
+@keyframes cardAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-card {
+  animation: cardAppear 0.6s ease-out;
+}
+
+/* Right panel floating animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-element-delay {
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Messaging animations */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes typing {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+.message-appear {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.message-appear-delay-1 {
+  animation-delay: 0.8s;
+}
+
+.message-appear-delay-2 {
+  animation-delay: 2s;
+}
+
+.message-typing {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 1.5s steps(20, end);
+}

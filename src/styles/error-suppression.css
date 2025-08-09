@@ -1,0 +1,23 @@
+/* Error suppression styles */
+/* Hide third-party script errors that might appear in the UI */
+
+/* Hide source map error messages */
+.error-message[data-error*="Failed to load resource"] {
+  display: none !important;
+}
+
+/* Hide sandbox iframe error messages */
+.error-message[data-error*="document's frame is sandboxed"] {
+  display: none !important;
+}
+
+/* Hide LinkedIn tracking errors */
+.error-message[data-error*="window.lintrk is not a function"] {
+  display: none !important;
+}
+
+/* Hide other common third-party errors */
+.error-message[data-error*="Optanon"],
+.error-message[data-error*="GTM"] {
+  display: none !important;
+}

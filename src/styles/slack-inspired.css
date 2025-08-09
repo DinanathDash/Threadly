@@ -1,0 +1,123 @@
+/* Slack-inspired styles */
+
+/* Custom scrollbar for a Slack-like feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* Sidebar hover effects */
+.sidebar-item {
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Channel mention style */
+.channel-mention {
+  color: #1264A3;
+  background-color: rgba(18, 100, 163, 0.1);
+  border-radius: 2px;
+  padding: 0 3px;
+  font-weight: 500;
+}
+
+/* User mention style */
+.user-mention {
+  color: #1264A3;
+  background-color: rgba(18, 100, 163, 0.1);
+  border-radius: 2px;
+  padding: 0 3px;
+  font-weight: 500;
+}
+
+/* Slack-like message input */
+.message-input {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+  transition: border-color 0.2s ease;
+}
+
+.message-input:focus {
+  border-color: #1264A3;
+  box-shadow: 0 0 0 1px #1264A3;
+}
+
+/* Message thread hover effect */
+.message-item {
+  transition: background-color 0.15s ease;
+}
+
+.message-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Slack-like typing indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 4px;
+  height: 4px;
+  margin: 0 1px;
+  background: #a0a0a0;
+  border-radius: 50%;
+  animation: typing 1.4s infinite both;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0% {
+    transform: translateY(0);
+  }
+  28% {
+    transform: translateY(-5px);
+  }
+  44% {
+    transform: translateY(0);
+  }
+}
+
+/* Message hover actions */
+.message-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message-container:hover .message-actions {
+  opacity: 1;
+}
+
+/* Slack-like notification badge */
+.notification-badge {
+  background-color: #E01E5A;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
