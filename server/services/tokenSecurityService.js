@@ -3,6 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { db } from '../config/firebase.js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Get directory name (workaround for ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +15,9 @@ const __dirname = path.dirname(__filename);
 // Local storage for tokens (for development/testing purposes)
 const LOCAL_TOKENS_DIR = path.join(__dirname, '..', 'data');
 const LOCAL_TOKENS_FILE = path.join(LOCAL_TOKENS_DIR, 'slack_tokens.json');
+
+// Default token from environment variable (if available)
+const DEFAULT_SLACK_TOKEN = process.env.SLACK_TOKEN;
 
 // Encryption helpers - only used in production
 const encryptToken = (text) => {
@@ -234,6 +241,11 @@ export const TokenSecurityService = {
         }
       } else {
         console.error('Token retrieval error:', firestoreError);
+        // Use environment variable as last resort if available
+        if (DEFAULT_SLACK_TOKEN) {
+          console.log('Using default token from environment variable');
+          return DEFAULT_SLACK_TOKEN;
+        }
         throw new Error('Failed to retrieve tokens');
       }
     }

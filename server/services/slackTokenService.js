@@ -3,6 +3,10 @@ import { db } from '../config/firebase.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Get directory name (workaround for ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +15,9 @@ const __dirname = path.dirname(__filename);
 // Local storage for tokens (for development/testing purposes)
 const LOCAL_TOKENS_DIR = path.join(__dirname, '..', 'data');
 const LOCAL_TOKENS_FILE = path.join(LOCAL_TOKENS_DIR, 'slack_tokens.json');
+
+// Default token from environment variable (if available)
+const DEFAULT_SLACK_TOKEN = process.env.SLACK_TOKEN;
 
 // Handle the OAuth exchange
 const exchangeCodeForToken = async (code) => {
@@ -237,32 +244,59 @@ const refreshAccessToken = async (userId) => {
 // Get a valid access token for a user
 const getValidAccessToken = async (userId) => {
   try {
-    const userRef = db.collection('users').doc(userId);
-    const userDoc = await userRef.get();
-    
-    if (!userDoc.exists) {
-      throw new Error('User not found');
+    // Try Firestore first
+    try {
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const tokens = userData.slackTokens;
+        
+        if (tokens && tokens.accessToken) {
+          // Check if token is expired or about to expire in the next 5 minutes
+          const now = new Date();
+          const expiresAt = tokens.expiresAt.toDate();
+          const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+          
+          if (expiresAt <= fiveMinutesFromNow) {
+            // Token is expired or about to expire, refresh it
+            return await refreshAccessToken(userId);
+          }
+          
+          // Token is still valid
+          return tokens.accessToken;
+        }
+      }
+    } catch (firestoreError) {
+      console.warn('Firestore access error:', firestoreError.message);
     }
     
-    const userData = userDoc.data();
-    const tokens = userData.slackTokens;
-    
-    if (!tokens) {
-      throw new Error('No tokens found for user');
+    // If Firestore fails or has no token, try local file (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        if (fs.existsSync(LOCAL_TOKENS_FILE)) {
+          const data = fs.readFileSync(LOCAL_TOKENS_FILE, 'utf8');
+          const allTokens = JSON.parse(data);
+          
+          if (allTokens[userId]?.slackTokens?.accessToken) {
+            console.log('Using locally stored token');
+            return allTokens[userId].slackTokens.accessToken;
+          }
+        }
+      } catch (fileError) {
+        console.warn('Local file access error:', fileError.message);
+      }
     }
     
-    // Check if token is expired or about to expire in the next 5 minutes
-    const now = new Date();
-    const expiresAt = tokens.expiresAt.toDate();
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-    
-    if (expiresAt <= fiveMinutesFromNow) {
-      // Token is expired or about to expire, refresh it
-      return await refreshAccessToken(userId);
+    // As a final fallback, use environment variable
+    if (DEFAULT_SLACK_TOKEN) {
+      console.log('Using default token from environment variable');
+      return DEFAULT_SLACK_TOKEN;
     }
     
-    // Token is still valid
-    return tokens.accessToken;
+    // If all attempts fail, throw error
+    throw new Error('No valid Slack token found');
   } catch (error) {
     console.error('Error getting valid access token:', error);
     throw error;
