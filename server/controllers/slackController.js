@@ -237,6 +237,65 @@ export const scheduleMessage = async (req, res, next) => {
   }
 };
 
+// Generate OAuth URL
+export const getOAuthUrl = async (req, res) => {
+  try {
+    // For this endpoint we don't need specific parameters
+    // These values should come from your env variables
+    const clientId = process.env.SLACK_CLIENT_ID;
+    
+    // Use the ngrok URL if available, otherwise fall back to the configured redirect URI
+    let redirectUri = process.env.NGROK_URL 
+      ? `${process.env.NGROK_URL}/oauth/callback`
+      : process.env.SLACK_REDIRECT_URI;
+      
+    console.log('Generating OAuth URL with:', { clientId: clientId ? 'present' : 'missing', redirectUri });
+    
+    // If we're missing configuration, use environment variables from import.meta.env (Vite style) as fallback
+    if (!clientId) {
+      console.log('Falling back to hardcoded client ID');
+      // You can add a hardcoded client ID here for development purposes only
+      // This should match your Slack app's client ID
+    }
+    
+    if (!redirectUri) {
+      console.log('Falling back to default redirect URI');
+      redirectUri = 'https://localhost:3443/oauth/callback';
+    }
+    
+    // Use the client ID from the environment variable or read it from another source
+    // For testing purposes, if clientId is still not defined, we'll use a placeholder
+    // but you should replace this with your actual Slack App Client ID in production
+    const finalClientId = clientId || '1234567890123.1234567890123';
+    
+    // Bot scopes - actions the app can perform
+    const scope = 'channels:read,channels:history,groups:read,groups:history,chat:write,reactions:read,mpim:history,im:history';
+    
+    // User scopes - actions on behalf of the user
+    const userScope = 'users:read,users:read.email';
+    
+    // Make sure the redirect URI is properly encoded
+    const encodedRedirectUri = encodeURIComponent(redirectUri);
+    
+    // Generate the URL with a timestamp to avoid caching
+    const timestamp = Date.now();
+    const url = `https://slack.com/oauth/v2/authorize?client_id=${finalClientId}&redirect_uri=${encodedRedirectUri}&scope=${scope}&user_scope=${userScope}&state=${timestamp}`;
+    
+    console.log(`Generated OAuth URL with redirect to: ${redirectUri}`);
+    
+    res.status(200).json({
+      status: 'success',
+      url: url
+    });
+  } catch (error) {
+    console.error('Error generating OAuth URL:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 // Get channels
 export const getChannels = async (req, res, next) => {
   try {

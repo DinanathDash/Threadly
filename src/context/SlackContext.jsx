@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { setupCorsProxy } from '../services/corsProxy';
 import { useAuth } from './AuthContext';
 import { useGlobalLoading } from './GlobalLoadingContext';
+import { getSlackChannels as fetchSlackChannels } from '../services/slackService';
 
 const SlackContext = createContext();
 
@@ -17,6 +18,8 @@ export function SlackProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [channels, setChannels] = useState([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const globalLoading = useGlobalLoading();
@@ -228,11 +231,39 @@ export function SlackProvider({ children }) {
     }
   };
 
+  // Function to fetch channels
+  const fetchChannels = async () => {
+    if (!isConnected || !currentUser) return;
+    
+    try {
+      setLoadingChannels(true);
+      setError(null);
+      
+      const channelsData = await fetchSlackChannels(currentUser.uid);
+      setChannels(channelsData || []);
+    } catch (err) {
+      console.error('Error fetching channels:', err);
+      setError(err.message);
+    } finally {
+      setLoadingChannels(false);
+    }
+  };
+
+  // Fetch channels when connected
+  useEffect(() => {
+    if (isConnected && !isLoading) {
+      fetchChannels();
+    }
+  }, [isConnected, isLoading]);
+
   const value = {
     slackWorkspace,
     isConnected,
     isLoading,
     error,
+    channels,
+    loadingChannels,
+    fetchChannels,
     handleOAuthCallback,
     disconnectSlack
   };

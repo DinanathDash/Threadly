@@ -34,6 +34,10 @@ const sendSlackMessage = async (userId, channelId, message) => {
       {
         channel: channelId,
         text: message,
+        username: 'Threadly Bot', // Add username for proper attribution
+        icon_url: 'https://avatars.githubusercontent.com/u/114047787?s=200&v=4', // GitHub logo as default icon
+        // Fallback to emoji if icon_url doesn't work
+        icon_emoji: ':thread:',
       },
       {
         headers: {
@@ -79,6 +83,9 @@ const sendSlackMessage = async (userId, channelId, message) => {
           {
             channel: channelId,
             text: message,
+            username: 'Threadly Bot', // Add username for proper attribution
+            icon_url: 'https://avatars.githubusercontent.com/u/114047787?s=200&v=4', // GitHub logo as default icon
+            icon_emoji: ':thread:', // Add an emoji icon as fallback
           },
           {
             headers: {

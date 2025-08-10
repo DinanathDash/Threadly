@@ -17,12 +17,104 @@ export default function OAuthCallbackPage() {
   useEffect(() => {
     const code = searchParams.get('code');
     const errorParam = searchParams.get('error');
+    const reauthorize = searchParams.get('reauthorize');
     
-    if (errorParam) {
-      toast.error('Authorization denied', {
-        description: 'Slack authorization was denied: ' + errorParam,
-      });
-      setError('Authorization was denied: ' + errorParam);
+    // Handle reauthorization request
+    if (reauthorize === 'true' && !code) {
+      console.log('Reauthorization requested, redirecting to Slack OAuth');
+      // Redirect to Slack OAuth
+      const initiateSlackAuth = async () => {
+        try {
+          // Store the current user ID in sessionStorage for retrieval after OAuth
+          if (currentUser?.uid) {
+            sessionStorage.setItem('connectingUserId', currentUser.uid);
+          }
+          
+          try {
+            // Call the API to get the OAuth URL
+            const response = await fetch('/api/slack/oauth-url');
+            
+            // Check if we got a response
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Error response from server:', errorText);
+              throw new Error(`Failed to get OAuth URL: ${response.status} ${response.statusText}`);
+            }
+            
+            // Parse JSON response
+            const data = await response.json();
+            
+            // Validate URL
+            if (!data.url || typeof data.url !== 'string') {
+              console.error('Invalid URL in response:', data);
+              throw new Error('Invalid OAuth URL received');
+            }
+            
+            console.log('Redirecting to Slack OAuth URL:', data.url.substring(0, 50) + '...');
+            
+            // Redirect to Slack's OAuth page
+            window.location.href = data.url;
+          } catch (fetchError) {
+            console.error('Error fetching OAuth URL:', fetchError);
+            
+            // Fallback option: construct the URL directly in the frontend as a last resort
+            try {
+              console.warn('Attempting fallback OAuth URL generation');
+              
+              // These values should match your Slack app configuration
+              // Ideally, this should be moved to environment variables
+              const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
+              const redirectUri = import.meta.env.VITE_SLACK_REDIRECT_URI || window.location.origin + '/oauth-callback';
+              
+              if (!clientId) {
+                throw new Error('Missing Slack client ID for fallback');
+              }
+              
+              // Bot scopes
+              const scope = 'channels:read,channels:history,groups:read,groups:history,chat:write,reactions:read,mpim:history,im:history';
+              
+              // Add user scopes if needed
+              const userScope = 'users:read,users:read.email';
+              const encodedRedirectUri = encodeURIComponent(redirectUri);
+              const timestamp = Date.now();
+              
+              // Build the proper OAuth URL with bot and user scopes separated
+              const fallbackUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&scope=${scope}&user_scope=${userScope}&state=${timestamp}`;
+              
+              console.log('Using fallback OAuth URL:', fallbackUrl.substring(0, 50) + '...');
+              window.location.href = fallbackUrl;
+            } catch (fallbackError) {
+              console.error('Fallback OAuth URL generation failed:', fallbackError);
+              throw new Error('Failed to initiate Slack authorization. Please try again later.');
+            }
+          }
+        } catch (err) {
+          console.error('Error initiating Slack auth:', err);
+          toast.error('Failed to connect to Slack', {
+            description: err.message || 'Please try again later',
+          });
+          setError(err.message || 'Failed to connect to Slack');
+        }
+      };
+      
+      initiateSlackAuth();
+      return;
+    }    if (errorParam) {
+      // Handle specific error cases
+      if (errorParam === 'invalid_scope' || errorParam === 'invalid_scope_requested') {
+        toast.error('Slack Authorization Error', {
+          description: 'There was an issue with the requested permissions. Please try again.',
+        });
+        setError('There was an issue with the Slack permissions request. This has been reported to the development team.');
+        
+        // Log this for debugging
+        console.error('Slack OAuth scope error. Please check that all requested scopes are configured in your Slack App.');
+      } else {
+        toast.error('Authorization denied', {
+          description: 'Slack authorization was denied: ' + errorParam,
+        });
+        setError('Authorization was denied: ' + errorParam);
+      }
       return;
     }
     

@@ -32,7 +32,7 @@ import Logo from '@/assets/Logo.svg';
 import InlineLoader from '@/components/ui/inline-loader';
 
 export default function MainLayout() {
-  const { isConnected, slackWorkspace, disconnectSlack } = useSlack();
+  const { isConnected, slackWorkspace, disconnectSlack, channels, loadingChannels } = useSlack();
   const { showLoading, hideLoading } = useGlobalLoading();
   const { currentUser, signOut, getSafeProfileImageUrl, setProfileImageError } = useAuth();
   const [channelSectionsExpanded, setChannelSectionsExpanded] = useState(true);
@@ -132,18 +132,59 @@ export default function MainLayout() {
 
           {channelSectionsExpanded && (
             <div className="space-y-1 mt-1">
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-600 hover:bg-slate-50">
-                <Hash size={16} strokeWidth={1.5} />
-                <span>design</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-600 hover:bg-slate-50">
-                <Hash size={16} strokeWidth={1.5} />
-                <span>marketing</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-600 hover:bg-slate-50">
-                <Hash size={16} strokeWidth={1.5} />
-                <span>general</span>
-              </button>
+              {isConnected ? (
+                <>
+                  {slackWorkspace ? (
+                    <>
+                      {isLoading ? (
+                        <div className="flex justify-center py-2">
+                          <InlineLoader size="sm" />
+                        </div>
+                      ) : (
+                        <>
+                          {channels && channels.length > 0 ? (
+                            channels.map(channel => (
+                              <NavLink
+                                key={channel.id}
+                                to={`/channel/${channel.id}`}
+                                className={({ isActive }) =>
+                                  `flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left ${
+                                    isActive
+                                      ? 'bg-indigo-50 text-indigo-700'
+                                      : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+                                  }`
+                                }
+                              >
+                                {channel.isPrivate ? (
+                                  <svg className="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 13h6m-3-3v6" />
+                                    <circle cx="12" cy="12" r="10" />
+                                  </svg>
+                                ) : (
+                                  <Hash size={16} strokeWidth={1.5} />
+                                )}
+                                <span>{channel.name}</span>
+                              </NavLink>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-slate-500">
+                              No channels found
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">
+                      Connect to Slack to see channels
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="px-3 py-2 text-sm text-slate-500">
+                  Connect to Slack to see channels
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -159,10 +200,21 @@ export default function MainLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={disconnectSlack}
-                className="text-xs text-slate-500 hover:text-red-600"
+                onClick={async () => {
+                  try {
+                    // First disconnect the current connection
+                    await disconnectSlack();
+                    // Then redirect to Slack authorization
+                    const { getSlackOAuthUrl } = await import('../services/slackService');
+                    const url = await getSlackOAuthUrl();
+                    window.location.href = url;
+                  } catch (error) {
+                    console.error('Error during reconnection:', error);
+                  }
+                }}
+                className="text-xs text-slate-500 hover:text-indigo-600"
               >
-                Disconnect
+                Reconnect
               </Button>
             </div>
           ) : (

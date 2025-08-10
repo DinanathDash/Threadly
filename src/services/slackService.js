@@ -38,7 +38,12 @@ export const getSlackOAuthUrl = async () => {
   
   // Use the redirect URI from environment variables
   const redirectUri = import.meta.env.VITE_SLACK_REDIRECT_URI;
-  const scope = 'channels:read,chat:write,groups:read,refresh_token'; // Include refresh_token scope for token rotation
+  
+  // Bot scopes - actions the app can perform
+  const scope = 'channels:read,channels:history,groups:read,groups:history,chat:write,reactions:read,mpim:history,im:history,users:read,users:read.email,users.profile:read';
+  
+  // User scopes - actions on behalf of the user
+  const userScope = 'users:read,users:read.email,users.profile:read';
   
   // Make sure the redirect URI is properly encoded
   const encodedRedirectUri = encodeURIComponent(redirectUri);
@@ -47,7 +52,7 @@ export const getSlackOAuthUrl = async () => {
   
   // We're using the team parameter with a value of "open" which can often
   // trigger the standard login flow rather than the workspace-specific flow
-  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&scope=${scope}&team=open&nonce=${Date.now()}`;
+  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&scope=${scope}&user_scope=${userScope}&state=${Date.now()}`;
   
   try {
     // Verify that we can make a connection before redirecting the user

@@ -21,6 +21,7 @@ import DashboardPage from './pages/DashboardPage';
 import SendMessagePage from './pages/SendMessagePage';
 import ScheduledMessagesPage from './pages/ScheduledMessagesPage';
 import SlackTestPage from './pages/SlackTestPage';
+import ChannelPage from './pages/ChannelPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/send-message" element={<SendMessagePage />} />
                     <Route path="/scheduled" element={<ScheduledMessagesPage />} />
+                    <Route path="/channel/:channelId" element={<ChannelPage />} />
                   </Route>
                 
                   {/* 404 Page */}

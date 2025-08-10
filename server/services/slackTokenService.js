@@ -354,6 +354,36 @@ const getValidAccessToken = async (userId) => {
         if (tokens && tokens.accessToken) {
           console.log('Slack tokens found in user document');
           
+          // First, validate token by making a simple API call
+          try {
+            // Test if token has correct scopes by testing an API call
+            console.log('Testing token validity with Slack API...');
+            const response = await axios.get('https://slack.com/api/auth.test', {
+              headers: {
+                Authorization: `Bearer ${tokens.accessToken}`,
+              }
+            });
+            
+            if (!response.data.ok) {
+              console.warn('Token validation failed:', response.data.error);
+              if (response.data.error === 'invalid_auth' || 
+                  response.data.error === 'token_expired' ||
+                  response.data.error === 'token_revoked') {
+                throw new Error(`Token is invalid: ${response.data.error}`);
+              }
+            } else {
+              console.log('Token validated successfully');
+            }
+          } catch (validationError) {
+            console.error('Error validating token:', validationError);
+            // We'll attempt to refresh the token if possible
+            if (tokens.refreshToken) {
+              console.log('Will attempt to refresh the invalid token');
+            } else {
+              throw new Error('Token is invalid and no refresh token is available');
+            }
+          }
+          
           // Check if token has been exchanged for a refresh token yet
           // If not, exchange it first (token rotation migration)
           if (!tokens.refreshToken && !tokens.accessToken.startsWith('xoxe')) {

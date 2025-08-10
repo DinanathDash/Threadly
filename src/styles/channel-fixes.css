@@ -1,0 +1,22 @@
+/* Channel layout fixes */
+.messages-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+
+/* Fix for Safari */
+.messages-container {
+  margin-top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+/* Force proper positioning in Firefox */
+@-moz-document url-prefix() {
+  [data-radix-scroll-area-viewport] > div {
+    height: 100% !important;
+  }
+}

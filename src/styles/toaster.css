@@ -1,0 +1,27 @@
+/* Custom styles for Sonner toast notifications - !important flags to override inline styles */
+
+/* Target all possible selectors for the toast description */
+.sonner-toast [data-description],
+.sonner-toast div[data-description],
+.sonner-toast-description,
+.sonner-toast div:nth-of-type(2),
+[data-sonner-toast] [data-description],
+[data-sonner-toaster] [data-description],
+.sonner-loading-wrapper + div,
+.sonner-toast > div > div:nth-child(2) {
+  color: rgba(var(--foreground-rgb), 1) !important;
+  opacity: 1 !important;
+  font-weight: 300 !important;
+}
+
+/* Override toast theme variables */
+:root {
+  --toast-description-opacity: 1 !important;
+  --normal-description-color: var(--popover-foreground) !important;
+}
+
+/* Extremely specific selector to target the second line */
+[id^="sonner-toast"] > div > div:nth-child(2) {
+  opacity: 1 !important;
+  color: inherit !important;
+}
