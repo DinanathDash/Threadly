@@ -4,6 +4,21 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, T
 // Sends an immediate message to Slack
 export const sendImmediateMessage = async (userId, channelId, message) => {
   try {
+    // Validate parameters
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    if (!channelId) {
+      throw new Error('Channel ID is required');
+    }
+    
+    if (!message || message.trim() === '') {
+      throw new Error('Message content cannot be empty');
+    }
+    
+    console.log(`Sending message to channel ${channelId}`);
+    
     const response = await fetch('/api/slack/send-message', {
       method: 'POST',
       headers: {
@@ -16,11 +31,14 @@ export const sendImmediateMessage = async (userId, channelId, message) => {
       }),
     });
 
+    const data = await response.json();
+    
     if (!response.ok) {
-      throw new Error('Failed to send message');
+      console.error('Server returned error:', data);
+      throw new Error(data.message || 'Failed to send message');
     }
 
-    return await response.json();
+    return data;
   } catch (error) {
     console.error('Error sending message:', error);
     throw error;
@@ -41,8 +59,10 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
     };
 
     const docRef = await addDoc(collection(db, 'scheduledMessages'), scheduledMessage);
+    console.log(`Message stored in database with ID: ${docRef.id}`);
     
     // Also tell our backend about it to schedule the actual job
+    console.log(`Notifying backend about scheduled message: ${docRef.id}`);
     const response = await fetch('/api/slack/schedule-message', {
       method: 'POST',
       headers: {
@@ -52,18 +72,24 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
         userId,
         channelId,
         message,
-        scheduledTime,
+        scheduledTime: scheduledTime.toISOString(), // Ensure proper date formatting
         messageId: docRef.id
       }),
     });
 
     if (!response.ok) {
       // If backend scheduling fails, update status to failed
+      console.error('Backend scheduling failed:', await response.text());
       await updateDoc(doc(db, 'scheduledMessages', docRef.id), {
-        status: 'failed'
+        status: 'failed',
+        error: `Server returned: ${response.status} ${response.statusText}`
       });
-      throw new Error('Failed to schedule message with server');
+      throw new Error(`Failed to schedule message with server: ${response.status} ${response.statusText}`);
     }
+    
+    // Get the response data
+    const data = await response.json();
+    console.log('Backend scheduling response:', data);
 
     return docRef.id;
   } catch (error) {
@@ -75,10 +101,11 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
 // Gets all scheduled messages for a user
 export const getScheduledMessages = async (userId) => {
   try {
+    // Get messages with both 'scheduled' and 'confirmed' status
     const q = query(
       collection(db, 'scheduledMessages'),
       where('userId', '==', userId),
-      where('status', '==', 'scheduled')
+      where('status', 'in', ['scheduled', 'confirmed'])
     );
     
     const querySnapshot = await getDocs(q);
@@ -97,6 +124,37 @@ export const getScheduledMessages = async (userId) => {
     return messages;
   } catch (error) {
     console.error('Error fetching scheduled messages:', error);
+    throw error;
+  }
+};
+
+// Get sent scheduled messages
+export const getSentMessages = async (userId) => {
+  try {
+    const q = query(
+      collection(db, 'scheduledMessages'),
+      where('userId', '==', userId),
+      where('status', '==', 'sent')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    const messages = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      messages.push({
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamp to JS Date
+        scheduledTime: data.scheduledTime.toDate(),
+        createdAt: data.createdAt.toDate(),
+        sentAt: data.sentAt ? data.sentAt.toDate() : null
+      });
+    });
+    
+    return messages;
+  } catch (error) {
+    console.error('Error fetching sent messages:', error);
     throw error;
   }
 };

@@ -144,15 +144,37 @@ const storeTokens = async (userId, tokens) => {
         });
       }
       
+      // Log the data we're about to store
+      console.log('Storing the following data to Firestore:', {
+        slackTokens: {
+          ...tokensData,
+          accessToken: tokensData.accessToken ? `${tokensData.accessToken.substring(0, 5)}...` : 'missing'
+        },
+        slackWorkspace: {
+          id: tokens.teamId,
+          name: tokens.teamName
+        }
+      });
+
+      // Set the data with merge option to avoid overwriting other user data
       await userRef.set({
         slackTokens: tokensData,
         slackWorkspace: {
           id: tokens.teamId,
           name: tokens.teamName,
         },
+        lastUpdated: new Date() // Add timestamp to track updates
       }, { merge: true });
       
-      console.log('Successfully stored tokens in Firestore');
+      // Verify the write by reading it back
+      const verifyDoc = await userRef.get();
+      const verifyData = verifyDoc.data();
+      
+      if (verifyData?.slackTokens?.accessToken) {
+        console.log('Successfully verified tokens in Firestore');
+      } else {
+        console.warn('Write verification failed: Tokens may not have been stored correctly');
+      }
     } catch (firestoreError) {
       console.warn('Failed to store tokens in Firestore, falling back to local storage:', firestoreError.message);
       
@@ -244,26 +266,47 @@ const refreshAccessToken = async (userId) => {
 // Get a valid access token for a user
 const getValidAccessToken = async (userId) => {
   try {
+    console.log(`Getting valid access token for user: ${userId}`);
+    
+    if (!userId) {
+      console.error('No userId provided to getValidAccessToken');
+      throw new Error('User ID is required to get access token');
+    }
+    
     // Try Firestore first
     try {
+      console.log('Attempting to get token from Firestore');
       const userRef = db.collection('users').doc(userId);
       const userDoc = await userRef.get();
       
       if (userDoc.exists) {
+        console.log('User document found in Firestore');
         const userData = userDoc.data();
         const tokens = userData.slackTokens;
         
         if (tokens && tokens.accessToken) {
+          console.log('Slack tokens found in user document');
+          
           // Check if token is expired or about to expire in the next 5 minutes
           const now = new Date();
-          const expiresAt = tokens.expiresAt.toDate();
+          let expiresAt;
+          
+          try {
+            expiresAt = tokens.expiresAt.toDate();
+          } catch (dateError) {
+            console.log('expiresAt is not a Firebase timestamp, trying as ISO string');
+            expiresAt = new Date(tokens.expiresAt);
+          }
+          
           const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
           
           if (expiresAt <= fiveMinutesFromNow) {
+            console.log('Token is expired or about to expire, refreshing...');
             // Token is expired or about to expire, refresh it
             return await refreshAccessToken(userId);
           }
           
+          console.log('Using valid token from Firestore');
           // Token is still valid
           return tokens.accessToken;
         }
@@ -274,15 +317,33 @@ const getValidAccessToken = async (userId) => {
     
     // If Firestore fails or has no token, try local file (development only)
     if (process.env.NODE_ENV !== 'production') {
+      console.log('Attempting to get token from local file storage');
       try {
         if (fs.existsSync(LOCAL_TOKENS_FILE)) {
           const data = fs.readFileSync(LOCAL_TOKENS_FILE, 'utf8');
           const allTokens = JSON.parse(data);
           
+          console.log(`Local tokens file found. Contains data for users: ${Object.keys(allTokens).join(', ')}`);
+          
           if (allTokens[userId]?.slackTokens?.accessToken) {
-            console.log('Using locally stored token');
-            return allTokens[userId].slackTokens.accessToken;
+            console.log('Found valid token in local storage');
+            
+            // Check if token is expired
+            const now = new Date();
+            const expiresAt = new Date(allTokens[userId].slackTokens.expiresAt);
+            
+            if (expiresAt <= now) {
+              console.log('Token from local storage is expired');
+              // We'll fall through to the next option
+            } else {
+              console.log('Using valid token from local storage');
+              return allTokens[userId].slackTokens.accessToken;
+            }
+          } else {
+            console.log(`No token found for user ${userId} in local storage`);
           }
+        } else {
+          console.log('Local tokens file does not exist');
         }
       } catch (fileError) {
         console.warn('Local file access error:', fileError.message);
@@ -296,7 +357,8 @@ const getValidAccessToken = async (userId) => {
     }
     
     // If all attempts fail, throw error
-    throw new Error('No valid Slack token found');
+    console.error('No valid Slack token found after trying all sources');
+    throw new Error('No valid Slack token found for user');
   } catch (error) {
     console.error('Error getting valid access token:', error);
     throw error;

@@ -40,10 +40,13 @@ export function SlackProvider({ children }) {
         if (userDoc.exists() && userDoc.data().slackTokens) {
           setSlackWorkspace(userDoc.data().slackWorkspace);
           setIsConnected(true);
+          console.log("Slack connection detected from database");
         } else {
+          console.log("No Slack connection found in database");
           setIsConnected(false);
         }
       } catch (err) {
+        console.error("Error checking Slack connection:", err);
         setError(err.message);
         setIsConnected(false);
       } finally {
@@ -52,7 +55,7 @@ export function SlackProvider({ children }) {
     };
 
     checkSlackConnection();
-  }, []);
+  }, [currentUser]); // Added currentUser dependency to re-check when user changes
 
   // Flag to track if an OAuth request is in progress
   const [isOAuthInProgress, setIsOAuthInProgress] = useState(false);
@@ -61,11 +64,14 @@ export function SlackProvider({ children }) {
   const processedCodes = useRef(new Set());
   
   // Handle the OAuth callback
-  const handleOAuthCallback = async (code) => {
+  const handleOAuthCallback = async (code, providedUserId = null) => {
     try {
-      // Ensure user is authenticated first
-      if (!currentUser) {
-        throw new Error('You must be logged in to connect your Slack workspace');
+      // Use provided userId first, then try to get from currentUser
+      const uid = providedUserId || currentUser?.uid || localStorage.getItem('userId');
+      
+      if (!uid) {
+        console.error('No user ID available for OAuth callback');
+        throw new Error('User ID not found. Please try logging in again.');
       }
       
       // Prevent duplicate code exchanges
@@ -83,8 +89,7 @@ export function SlackProvider({ children }) {
       setIsOAuthInProgress(true);
       setIsLoading(true);
       setError(null);
-      globalLoading.showLoading("Connecting to Slack...");
-      showLoading('Connecting to Slack workspace...');
+      globalLoading.showLoading("Connecting to Slack workspace...");
       
       // Add this code to the processed set
       processedCodes.current.add(code);
@@ -99,18 +104,16 @@ export function SlackProvider({ children }) {
         throw new Error('Invalid authorization code received');
       }
       
-      // Exchange code for tokens with our backend
+            // Exchange code for tokens with our backend
       const response = await fetch(`/api/slack/oauth?_=${timestamp}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache'
         },
         body: JSON.stringify({ 
-          code,
-          userId: currentUser.uid // Pass the Firebase user ID
-        }),
+          code, 
+          userId: uid
+        })
       });
 
       if (!response.ok) {
@@ -134,17 +137,42 @@ export function SlackProvider({ children }) {
       // Store the user ID for future reference
       localStorage.setItem('userId', data.userId);
       
+      // Log success with workspace details
+      console.log('Successfully connected to Slack workspace:', data.workspace);
+      
+      // Update the local state
       setSlackWorkspace(data.workspace);
       setIsConnected(true);
+      
+      // Clear any previous errors
+      setError(null);
+      globalLoading.hideLoading();
+      
+      // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
       console.error('OAuth callback error:', err);
       setError(err.message || 'An unknown error occurred');
       
-      // Third-party CORS errors won't affect our flow, so we log them but continue
-      if (err.message && err.message.includes('CORS')) {
-        console.warn('CORS error detected in Slack OAuth flow - this is likely from third-party services and not critical');
+      // Hide the loading indicator
+      if (globalLoading && typeof globalLoading.hideLoading === 'function') {
+        globalLoading.hideLoading();
       }
+      
+      // Third-party CORS errors won't affect our flow, so we log them but continue
+      if (err.message && (
+        err.message.includes('CORS') ||
+        err.message.includes('third-party') ||
+        err.message.includes('googlesyndication') ||
+        err.message.includes('showLoading')
+      )) {
+        console.warn('Non-critical error detected in Slack OAuth flow - this is likely from third-party services');
+        // Don't rethrow non-critical errors so the flow can continue
+        return;
+      }
+      
+      // Rethrow the error so it can be handled by the calling component
+      throw err;
     } finally {
       setIsLoading(false);
       setIsOAuthInProgress(false);
@@ -164,20 +192,35 @@ export function SlackProvider({ children }) {
         throw new Error('You must be logged in to disconnect your Slack workspace');
       }
       
+      // Show loading indicator
+      if (globalLoading && typeof globalLoading.showLoading === 'function') {
+        globalLoading.showLoading();
+      }
+      
+      const userId = currentUser?.uid || localStorage.getItem('userId');
+      
       if (userId) {
+        console.log('Disconnecting Slack for user:', userId);
+        
         // Call backend to revoke tokens
-        await fetch('/api/slack/disconnect', {
+        const response = await fetch('/api/slack/disconnect', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ userId }),
         });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to disconnect from Slack');
+        }
 
         // Update local state
         localStorage.removeItem('userId');
         setSlackWorkspace(null);
         setIsConnected(false);
+        console.log('Successfully disconnected from Slack');
         navigate('/');
       }
     } catch (err) {

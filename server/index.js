@@ -13,6 +13,7 @@ import diagnosticRoutes from './routes/diagnosticRoutes.js';
 
 // Import token refresh scheduler for production
 import { startTokenRefreshScheduler } from './services/tokenRefreshService.js';
+import { initializeScheduler } from './services/slackMessageService.js';
 
 // Configure dotenv
 dotenv.config();
@@ -94,6 +95,10 @@ httpServer.listen(PORT, () => {
     startTokenRefreshScheduler();
     console.log('Token refresh scheduler started successfully');
   }
+  
+  // Initialize the message scheduler to process scheduled messages
+  initializeScheduler();
+  console.log('Message scheduler initialized successfully');
 });
 
 // Start HTTPS server for local development

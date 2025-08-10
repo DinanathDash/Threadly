@@ -1,10 +1,27 @@
 // Service to interact with our backend which in turn interacts with Slack API
 export const getSlackChannels = async (userId) => {
   try {
+    if (!userId) {
+      throw new Error('User ID is missing. Please log in again.');
+    }
+    
+    console.log('Fetching channels for user ID:', userId);
     const response = await fetch(`/api/slack/channels?userId=${userId}`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch channels');
+      // Try to get more details from the response
+      try {
+        const errorData = await response.json();
+        
+        // Check for missing permissions error
+        if (errorData.details && errorData.details.includes('missing_scope')) {
+          throw new Error('Additional Slack permissions are needed to access private channels');
+        }
+        
+        throw new Error(`Failed to fetch channels: ${errorData.message || response.statusText}`);
+      } catch (jsonError) {
+        throw new Error(`Failed to fetch channels: ${response.status} ${response.statusText}`);
+      }
     }
     
     const data = await response.json();
@@ -21,7 +38,7 @@ export const getSlackOAuthUrl = async () => {
   
   // Use the redirect URI from environment variables
   const redirectUri = import.meta.env.VITE_SLACK_REDIRECT_URI;
-  const scope = 'channels:read,chat:write'; // Add other required scopes
+  const scope = 'channels:read,chat:write,groups:read'; // Include groups:read for private channels
   
   // Make sure the redirect URI is properly encoded
   const encodedRedirectUri = encodeURIComponent(redirectUri);

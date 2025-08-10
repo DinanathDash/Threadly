@@ -1,7 +1,7 @@
 {
   "hosting": {
     "site": "threadly",
-    "public": "public",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",

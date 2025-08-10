@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSlack } from '@/context/SlackContext';
-import { getScheduledMessages, cancelScheduledMessage } from '@/services/messageService';
+import { getScheduledMessages, getSentMessages, cancelScheduledMessage } from '@/services/messageService';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CalendarIcon, Clock, AlertTriangle, X, Check } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
@@ -15,10 +17,11 @@ export default function ScheduledMessagesPage() {
   const navigate = useNavigate();
   
   // State
-  const [messages, setMessages] = useState([]);
+  const [upcomingMessages, setUpcomingMessages] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState("upcoming");
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
-  const [error, setError] = useState(null);
   
   // Redirect if not connected
   useEffect(() => {
@@ -27,17 +30,28 @@ export default function ScheduledMessagesPage() {
     }
   }, [isConnected, isLoading, navigate]);
   
-  // Load scheduled messages
+  // Load messages
   useEffect(() => {
     const fetchMessages = async () => {
       if (isConnected) {
         try {
+          setLoading(true);
           const userId = localStorage.getItem('userId');
-          const messagesData = await getScheduledMessages(userId);
-          setMessages(messagesData);
+          
+          // Get both upcoming and sent messages
+          const [upcomingData, sentData] = await Promise.all([
+            getScheduledMessages(userId),
+            getSentMessages(userId)
+          ]);
+          
+          setUpcomingMessages(upcomingData);
+          setSentMessages(sentData);
         } catch (error) {
-          setError('Failed to load scheduled messages');
-          console.error('Error loading scheduled messages:', error);
+          toast.error('Failed to load messages', {
+            description: error.message || 'There was an error loading your messages.',
+            duration: 5000,
+          });
+          console.error('Error loading messages:', error);
         } finally {
           setLoading(false);
         }
@@ -57,9 +71,14 @@ export default function ScheduledMessagesPage() {
     try {
       await cancelScheduledMessage(messageId);
       // Update the messages list
-      setMessages(messages.filter(msg => msg.id !== messageId));
+      setUpcomingMessages(upcomingMessages.filter(msg => msg.id !== messageId));
+      toast.success('Message cancelled', {
+        description: 'Your scheduled message has been cancelled.',
+      });
     } catch (error) {
-      setError('Failed to cancel message');
+      toast.error('Failed to cancel message', {
+        description: error.message || 'There was a problem cancelling your message.',
+      });
       console.error('Error cancelling message:', error);
     } finally {
       setCancelling(null);
@@ -75,19 +94,31 @@ export default function ScheduledMessagesPage() {
         </p>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Messages</CardTitle>
-          <CardDescription>
-            Messages scheduled to be sent in the future
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : messages.length > 0 ? (
+      <Tabs 
+        defaultValue="upcoming" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="mb-4">
+          <TabsTrigger value="upcoming">Upcoming Messages</TabsTrigger>
+          <TabsTrigger value="sent">Sent Messages</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upcoming">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Messages</CardTitle>
+              <CardDescription>
+                Messages scheduled to be sent in the future
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+          ) : upcomingMessages.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -98,7 +129,7 @@ export default function ScheduledMessagesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {messages
+                {upcomingMessages
                   .sort((a, b) => a.scheduledTime - b.scheduledTime)
                   .map(message => (
                     <TableRow key={message.id}>
@@ -216,15 +247,90 @@ export default function ScheduledMessagesPage() {
               </Button>
             </div>
           )}
-          
-          {error && (
-            <div className="mt-4 p-4 bg-destructive/10 rounded-md flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              <p className="text-sm font-medium text-destructive">{error}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
+        </TabsContent>
+        
+        <TabsContent value="sent">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sent Messages</CardTitle>
+              <CardDescription>
+                Messages that have been sent to Slack
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : sentMessages.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Channel</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Sent At</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sentMessages
+                      .sort((a, b) => b.sentAt - a.sentAt) // Show newest first
+                      .map(message => (
+                        <TableRow key={message.id}>
+                          <TableCell>#{message.channelId}</TableCell>
+                          <TableCell className="max-w-md">
+                            <p className="truncate">{message.message}</p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="h-3 w-3" />
+                                <span className="text-sm">
+                                  {format(message.sentAt, "MMM d, yyyy")}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span className="text-sm">
+                                  {format(message.sentAt, "h:mm a")}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                              <Check className="h-3 w-3 mr-1" /> Sent
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="rounded-full bg-muted p-3">
+                    <Check className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <h3 className="font-medium">No sent messages</h3>
+                    <p className="text-sm text-muted-foreground">
+                      You don't have any scheduled messages that have been sent yet
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/send-message?schedule=true')}
+                  >
+                    Schedule a Message
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
@@ -21,6 +22,56 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileImageError, setProfileImageError] = useState(false);
+  const navigate = useNavigate();
+  
+  // Helper function to get safe profile image URL
+  const getSafeProfileImageUrl = (user) => {
+    // If there's no user or no photoURL, return null
+    if (!user || !user.photoURL) return null;
+    
+    // If we've previously had an error with this profile image, return null
+    if (profileImageError && user.uid === currentUser?.uid) return null;
+    
+    // Check if it's a Google profile image (which might be rate limited)
+    const isGoogleImage = user.photoURL.includes('googleusercontent.com');
+    
+    // Use a local storage flag to detect repeated rate limiting issues
+    const rateLimitKey = `image_rate_limited_${user.uid}`;
+    const isRateLimited = localStorage.getItem(rateLimitKey) === 'true';
+    
+    // If we've detected rate limiting for this user before, don't even try to load the image
+    if (isRateLimited) {
+      console.log('Using fallback for rate-limited profile image');
+      return null;
+    }
+    
+    if (isGoogleImage) {
+      try {
+        // Try to modify the Google image URL to get a much smaller size
+        // to avoid rate limits (s96-c -> s24-c)
+        const url = new URL(user.photoURL);
+        
+        // Force a small image size
+        return user.photoURL.replace('s96-c', 's24-c').replace('s128', 's24');
+      } catch (error) {
+        console.warn('Error parsing profile image URL:', error);
+        return null;
+      }
+    }
+    
+    return user.photoURL;
+  };
+  
+  // Function to clear rate limit flags (to be called periodically)
+  const clearRateLimitFlags = () => {
+    if (!currentUser) return;
+    
+    const rateLimitKey = `image_rate_limited_${currentUser.uid}`;
+    localStorage.removeItem(rateLimitKey);
+    setProfileImageError(false);
+    console.log('Cleared rate limit flags for profile images');
+  };
 
   // Sign in with Google
   const signInWithGoogle = async () => {
@@ -97,6 +148,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      // The redirection will be handled by the AuthProvider useEffect
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -121,17 +173,39 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        console.log('User authenticated, uid:', user.uid);
+        // Store userId in localStorage for API calls
+        localStorage.setItem('userId', user.uid);
+        
         // Get additional user data from Firestore
         const userData = await getUserData(user.uid);
         setCurrentUser({ ...user, ...userData });
       } else {
+        console.log('User signed out');
         setCurrentUser(null);
+        // Clear userId from localStorage
+        localStorage.removeItem('userId');
+        // Redirect to login page if not authenticated
+        navigate('/');
       }
       setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
+  }, [navigate]);
+
+  // Effect to periodically clear rate limit flags (once every hour)
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    // Clear rate limit flags on initial load
+    clearRateLimitFlags();
+    
+    // Set up interval to clear rate limit flags every hour
+    const interval = setInterval(clearRateLimitFlags, 60 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   const value = {
     currentUser,
@@ -142,6 +216,9 @@ export function AuthProvider({ children }) {
     resetPassword,
     signOut,
     getUserData,
+    getSafeProfileImageUrl,
+    setProfileImageError,
+    clearRateLimitFlags,
   };
 
   return (

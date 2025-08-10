@@ -5,6 +5,7 @@ import { SlackProvider } from './context/SlackContext';
 import { GlobalLoadingProvider } from './context/GlobalLoadingContext';
 import ThirdPartyScriptHandler from './components/ThirdPartyScriptHandler';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 
 // Import theme
@@ -14,13 +15,13 @@ import theme from './lib/theme';
 import MainLayout from './layouts/MainLayout';
 
 // Import pages
-import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import SendMessagePage from './pages/SendMessagePage';
 import ScheduledMessagesPage from './pages/ScheduledMessagesPage';
 import SlackTestPage from './pages/SlackTestPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -33,32 +34,34 @@ function App() {
               <ThirdPartyScriptHandler />
               <Toaster position="top-right" />
               <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/oauth-callback" element={
-                  <ProtectedRoute>
-                    <OAuthCallbackPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/slack-test" element={
-                  <ProtectedRoute>
-                    <SlackTestPage />
-                  </ProtectedRoute>
-                } />
-              
-                <Route element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/send-message" element={<SendMessagePage />} />
-                  <Route path="/scheduled" element={<ScheduledMessagesPage />} />
-                </Route>
-              
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<LoginPage />} />
+                  <Route path="/oauth-callback" element={
+                    <ProtectedRoute>
+                      <OAuthCallbackPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/slack-test" element={
+                    <ProtectedRoute>
+                      <SlackTestPage />
+                    </ProtectedRoute>
+                  } />
+                
+                  <Route element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/send-message" element={<SendMessagePage />} />
+                    <Route path="/scheduled" element={<ScheduledMessagesPage />} />
+                  </Route>
+                
+                  {/* 404 Page */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </ErrorBoundary>
               </div>
             </SlackProvider>
           </GlobalLoadingProvider>
