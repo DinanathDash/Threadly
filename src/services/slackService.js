@@ -38,7 +38,7 @@ export const getSlackOAuthUrl = async () => {
   
   // Use the redirect URI from environment variables
   const redirectUri = import.meta.env.VITE_SLACK_REDIRECT_URI;
-  const scope = 'channels:read,chat:write,groups:read'; // Include groups:read for private channels
+  const scope = 'channels:read,chat:write,groups:read,refresh_token'; // Include refresh_token scope for token rotation
   
   // Make sure the redirect URI is properly encoded
   const encodedRedirectUri = encodeURIComponent(redirectUri);

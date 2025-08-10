@@ -75,16 +75,20 @@ const exchangeCodeForToken = async (code) => {
       throw new Error('No user information received from Slack API');
     }
     
+    // Check if the token starts with 'xoxe' prefix (indicating it's from token rotation)
+    const isRotatedToken = data.access_token.startsWith('xoxe');
+    
     // Return with default values for optional fields
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token || null, // Handle missing refresh token
-      expiresIn: data.expires_in || 86400, // Typically 86400 seconds (24 hours)
+      expiresIn: data.expires_in || (isRotatedToken ? 43200 : 86400), // 12 hours for rotated tokens, 24 hours otherwise
       teamId: data.team.id,
       teamName: data.team.name,
       userId: data.authed_user.id,
       scope: data.scope || '',
-      botUserId: data.bot_user_id || null
+      botUserId: data.bot_user_id || null,
+      tokenType: isRotatedToken ? 'rotated' : 'standard'
     };
   } catch (error) {
     console.error('Error exchanging code for token:', error);
@@ -209,6 +213,69 @@ const storeTokens = async (userId, tokens) => {
   }
 };
 
+// Exchange long-lived token for a refresh token and an expiring access token
+const exchangeLongLivedToken = async (userId) => {
+  try {
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data();
+    const accessToken = userData.slackTokens?.accessToken;
+    
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+    
+    // Check if the token starts with xoxe which means it's already been exchanged
+    if (accessToken.startsWith('xoxe')) {
+      console.log('Token is already an exchanged token (xoxe prefix). No need to exchange.');
+      return accessToken;
+    }
+    
+    console.log('Exchanging long-lived token for refresh token...');
+    const response = await axios.post('https://slack.com/api/oauth.v2.exchange', null, {
+      params: {
+        client_id: process.env.SLACK_CLIENT_ID,
+        client_secret: process.env.SLACK_CLIENT_SECRET,
+        token: accessToken
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    
+    const data = response.data;
+    
+    if (!data.ok) {
+      console.error('Error exchanging token:', data.error);
+      throw new Error(data.error || 'Failed to exchange long-lived token');
+    }
+    
+    // Calculate when the new token will expire
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + data.expires_in);
+    
+    // Update the tokens in the database
+    await userRef.update({
+      'slackTokens.accessToken': data.access_token,
+      'slackTokens.refreshToken': data.refresh_token,
+      'slackTokens.expiresAt': expiresAt,
+      'slackTokens.lastExchanged': new Date(),
+      'slackTokens.tokenType': data.token_type
+    });
+    
+    console.log('Successfully exchanged long-lived token for refresh token');
+    return data.access_token;
+  } catch (error) {
+    console.error('Error exchanging long-lived token:', error);
+    throw error;
+  }
+};
+
 // Refresh the access token when it expires
 const refreshAccessToken = async (userId) => {
   try {
@@ -286,6 +353,13 @@ const getValidAccessToken = async (userId) => {
         
         if (tokens && tokens.accessToken) {
           console.log('Slack tokens found in user document');
+          
+          // Check if token has been exchanged for a refresh token yet
+          // If not, exchange it first (token rotation migration)
+          if (!tokens.refreshToken && !tokens.accessToken.startsWith('xoxe')) {
+            console.log('Token has not been exchanged yet. Initiating token exchange.');
+            return await exchangeLongLivedToken(userId);
+          }
           
           // Check if token is expired or about to expire in the next 5 minutes
           const now = new Date();
@@ -368,6 +442,7 @@ const getValidAccessToken = async (userId) => {
 export {
   exchangeCodeForToken,
   storeTokens,
+  exchangeLongLivedToken,
   refreshAccessToken,
   getValidAccessToken,
 };
