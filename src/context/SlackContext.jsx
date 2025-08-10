@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 import { useGlobalLoading } from './GlobalLoadingContext';
 import { getSlackChannels as fetchSlackChannels } from '../services/slackService';
 import logger from '../lib/logger';
+import { getApiUrl } from '../config/api';
 
 const SlackContext = createContext();
 
@@ -109,7 +110,7 @@ export function SlackProvider({ children }) {
       }
       
             // Exchange code for tokens with our backend
-      const response = await fetch(`/api/slack/oauth?_=${timestamp}`, {
+      const response = await fetch(getApiUrl(`/api/slack/oauth?_=${timestamp}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
