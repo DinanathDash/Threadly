@@ -208,7 +208,7 @@ export function SlackProvider({ children }) {
         logger.info('Disconnecting Slack for user:', userId);
         
         // Call backend to revoke tokens
-        const response = await fetch('/api/slack/disconnect', {
+        const response = await fetch(getApiUrl('/api/slack/disconnect'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

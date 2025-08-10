@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { getSlackOAuthUrl } from '@/services/slackService';
+import { getApiUrl } from '@/config/api';
 
 export default function SlackTestPage() {
   const [redirectUri, setRedirectUri] = useState('https://localhost:3443/oauth/callback');
@@ -28,7 +29,7 @@ export default function SlackTestPage() {
     try {
       setResponse('Testing OAuth configuration...');
       
-      const response = await fetch('/api/diagnostic/test-oauth', {
+      const response = await fetch(getApiUrl('/api/diagnostic/test-oauth'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,7 +50,7 @@ export default function SlackTestPage() {
     try {
       setResponse('Testing SSL certificate...');
       
-      const response = await fetch('https://localhost:3443/ssl-verify');
+      const response = await fetch(getApiUrl('/ssl-verify'));
       const data = await response.json();
       
       setResponse(JSON.stringify(data, null, 2));

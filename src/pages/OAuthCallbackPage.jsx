@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import LoadingScreen from '@/components/LoadingScreen';
 import { toast } from 'sonner';
+import { getApiUrl } from '@/config/api';
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -32,7 +33,7 @@ export default function OAuthCallbackPage() {
           
           try {
             // Call the API to get the OAuth URL
-            const response = await fetch('/api/slack/oauth-url');
+            const response = await fetch(getApiUrl('/api/slack/oauth-url'));
             
             // Check if we got a response
             if (!response.ok) {

@@ -1,5 +1,6 @@
 // Service to interact with our backend which in turn interacts with Slack API
 import logger from '../lib/logger';
+import { getApiUrl } from '../config/api';
 
 export const getSlackChannels = async (userId) => {
   try {
@@ -8,7 +9,7 @@ export const getSlackChannels = async (userId) => {
     }
     
     logger.info('Fetching channels for user ID:', userId);
-    const response = await fetch(`/api/slack/channels?userId=${userId}`);
+    const response = await fetch(getApiUrl(`/api/slack/channels?userId=${userId}`));
     
     if (!response.ok) {
       // Try to get more details from the response

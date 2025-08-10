@@ -1,6 +1,7 @@
 // Channel service for handling Slack channel data
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { getApiUrl } from '../config/api';
 
 // Get all channels for the current user
 export const getChannels = async (userId) => {
@@ -10,7 +11,7 @@ export const getChannels = async (userId) => {
     }
     
     console.log('Fetching channels for user ID:', userId);
-    const response = await fetch(`/api/channels/channels?userId=${userId}`);
+    const response = await fetch(getApiUrl(`/api/channels/channels?userId=${userId}`));
     
     if (!response.ok) {
       try {
@@ -46,7 +47,7 @@ export const getChannelMessages = async (userId, channelId, cursor = null, limit
     if (cursor) url += `&cursor=${cursor}`;
     if (limit) url += `&limit=${limit}`;
     
-    const response = await fetch(url);
+    const response = await fetch(getApiUrl(url));
     
     if (!response.ok) {
       try {
@@ -72,7 +73,7 @@ export const getChannelInfo = async (userId, channelId) => {
       throw new Error('User ID and Channel ID are required.');
     }
     
-    const response = await fetch(`/api/channels/channels/${channelId}/info?userId=${userId}`);
+    const response = await fetch(getApiUrl(`/api/channels/channels/${channelId}/info?userId=${userId}`));
     
     if (!response.ok) {
       try {
@@ -128,7 +129,7 @@ export const sendChannelMessage = async (userId, channelId, message) => {
       throw new Error('User ID, Channel ID, and message are required.');
     }
     
-    const response = await fetch('/api/slack/send-message', {
+    const response = await fetch(getApiUrl('/api/slack/send-message'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

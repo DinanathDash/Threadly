@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { getApiUrl } from '../config/api';
 
 // Sends an immediate message to Slack
 export const sendImmediateMessage = async (userId, channelId, message) => {
@@ -19,7 +20,7 @@ export const sendImmediateMessage = async (userId, channelId, message) => {
     
     console.log(`Sending message to channel ${channelId}`);
     
-    const response = await fetch('/api/slack/send-message', {
+    const response = await fetch(getApiUrl('/api/slack/send-message'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
     
     // Also tell our backend about it to schedule the actual job
     console.log(`Notifying backend about scheduled message: ${docRef.id}`);
-    const response = await fetch('/api/slack/schedule-message', {
+    const response = await fetch(getApiUrl('/api/slack/schedule-message'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,7 +173,7 @@ export const cancelScheduledMessage = async (messageId) => {
     });
     
     // Also tell our backend to cancel the job
-    const response = await fetch('/api/slack/cancel-message', {
+    const response = await fetch(getApiUrl('/api/slack/cancel-message'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
