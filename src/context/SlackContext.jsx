@@ -6,6 +6,7 @@ import { setupCorsProxy } from '../services/corsProxy';
 import { useAuth } from './AuthContext';
 import { useGlobalLoading } from './GlobalLoadingContext';
 import { getSlackChannels as fetchSlackChannels } from '../services/slackService';
+import logger from '../lib/logger';
 
 const SlackContext = createContext();
 
@@ -43,13 +44,13 @@ export function SlackProvider({ children }) {
         if (userDoc.exists() && userDoc.data().slackTokens) {
           setSlackWorkspace(userDoc.data().slackWorkspace);
           setIsConnected(true);
-          console.log("Slack connection detected from database");
+          logger.info("Slack connection detected from database");
         } else {
-          console.log("No Slack connection found in database");
+          logger.info("No Slack connection found in database");
           setIsConnected(false);
         }
       } catch (err) {
-        console.error("Error checking Slack connection:", err);
+        logger.error("Error checking Slack connection:", err);
         setError(err.message);
         setIsConnected(false);
       } finally {
@@ -79,13 +80,13 @@ export function SlackProvider({ children }) {
       
       // Prevent duplicate code exchanges
       if (processedCodes.current.has(code)) {
-        console.log(`Code ${code.substring(0, 5)}... has already been processed, skipping.`);
+        logger.info(`Code ${code.substring(0, 5)}... has already been processed, skipping.`);
         return;
       }
       
       // Prevent multiple simultaneous requests
       if (isOAuthInProgress) {
-        console.log("OAuth request already in progress, skipping duplicate request");
+        logger.info("OAuth request already in progress, skipping duplicate request");
         return;
       }
       
@@ -100,7 +101,7 @@ export function SlackProvider({ children }) {
       // Add a timestamp parameter to ensure the code is always treated as fresh
       // This helps prevent "invalid_code" errors caused by cached responses
       const timestamp = Date.now();
-      console.log(`Exchanging code for tokens with timestamp: ${timestamp}...`);
+      logger.info(`Exchanging code for tokens with timestamp: ${timestamp}...`);
       
       // Check if this is a valid code before proceeding
       if (!code || typeof code !== 'string' || code.trim() === '') {
@@ -135,13 +136,13 @@ export function SlackProvider({ children }) {
       }
 
       const data = await response.json();
-      console.log('Successfully connected to Slack workspace');
+      logger.info('Successfully connected to Slack workspace');
       
       // Store the user ID for future reference
       localStorage.setItem('userId', data.userId);
       
       // Log success with workspace details
-      console.log('Successfully connected to Slack workspace:', data.workspace);
+      logger.info('Successfully connected to Slack workspace:', data.workspace);
       
       // Update the local state
       setSlackWorkspace(data.workspace);
@@ -203,7 +204,7 @@ export function SlackProvider({ children }) {
       const userId = currentUser?.uid || localStorage.getItem('userId');
       
       if (userId) {
-        console.log('Disconnecting Slack for user:', userId);
+        logger.info('Disconnecting Slack for user:', userId);
         
         // Call backend to revoke tokens
         const response = await fetch('/api/slack/disconnect', {
@@ -223,7 +224,7 @@ export function SlackProvider({ children }) {
         localStorage.removeItem('userId');
         setSlackWorkspace(null);
         setIsConnected(false);
-        console.log('Successfully disconnected from Slack');
+        logger.info('Successfully disconnected from Slack');
         navigate('/');
       }
     } catch (err) {

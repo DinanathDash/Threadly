@@ -8,7 +8,9 @@ import {
   scheduleMessage as scheduleSlackMsg,
   getChannels as getSlackChannels,
   cancelScheduledMessage as cancelSlackMsg
-} from '../services/slackMessageService.js';// Handle OAuth callback
+} from '../services/slackMessageService.js';
+
+import logger from '../utils/logger.js';// Handle OAuth callback
 export const handleOAuth = async (req, res, next) => {
   try {
     const { code, userId } = req.body;
@@ -27,7 +29,7 @@ export const handleOAuth = async (req, res, next) => {
       });
     }
     
-    console.log(`Processing OAuth code: ${code.substring(0, 5)}... for user: ${userId}`);
+    logger.info(`Processing OAuth code: ${code.substring(0, 5)}... for user: ${userId}`);
     
     try {
       // Exchange the code for tokens
@@ -122,12 +124,12 @@ export const sendImmediateMessage = async (req, res, next) => {
       });
     }
     
-    console.log(`Processing send message request for user ${userId} to channel ${channelId}`);
+    logger.info(`Processing send message request for user ${userId} to channel ${channelId}`);
     
     try {
       const result = await sendSlackMsg(userId, channelId, message);
       
-      console.log('Message sent successfully:', result);
+      logger.info('Message sent successfully:', result);
       
       return res.status(200).json({
         status: 'success',

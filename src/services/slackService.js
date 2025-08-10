@@ -1,11 +1,13 @@
 // Service to interact with our backend which in turn interacts with Slack API
+import logger from '../lib/logger';
+
 export const getSlackChannels = async (userId) => {
   try {
     if (!userId) {
       throw new Error('User ID is missing. Please log in again.');
     }
     
-    console.log('Fetching channels for user ID:', userId);
+    logger.info('Fetching channels for user ID:', userId);
     const response = await fetch(`/api/slack/channels?userId=${userId}`);
     
     if (!response.ok) {
@@ -27,7 +29,7 @@ export const getSlackChannels = async (userId) => {
     const data = await response.json();
     return data.channels;
   } catch (error) {
-    console.error('Error fetching Slack channels:', error);
+    logger.error('Error fetching Slack channels:', error);
     throw error;
   }
 };
@@ -48,7 +50,7 @@ export const getSlackOAuthUrl = async () => {
   // Make sure the redirect URI is properly encoded
   const encodedRedirectUri = encodeURIComponent(redirectUri);
   
-  console.log('Using Slack OAuth URL with redirect URI:', redirectUri);
+  logger.info('Using Slack OAuth URL with redirect URI:', redirectUri);
   
   // We're using the team parameter with a value of "open" which can often
   // trigger the standard login flow rather than the workspace-specific flow
@@ -64,7 +66,7 @@ export const getSlackOAuthUrl = async () => {
     if (!response.ok) {
       console.warn('Slack API test failed, connection issues might occur:', await response.text());
     } else {
-      console.log('Slack API test successful, proceeding with OAuth flow');
+      logger.info('Slack API test successful, proceeding with OAuth flow');
     }
   } catch (error) {
     console.error('Error testing Slack API connection:', error);

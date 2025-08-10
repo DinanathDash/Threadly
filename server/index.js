@@ -6,6 +6,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import { fileURLToPath } from 'url';
+import logger from './utils/logger.js';
 
 // Import routes
 import slackRoutes from './routes/slack.js';
@@ -43,9 +44,9 @@ app.get('/oauth/callback', (req, res) => {
   const { code, error } = req.query;
   const redirectUrl = new URL('/oauth-callback', process.env.FRONTEND_URL);
   
-  console.log('OAuth callback received:');
-  console.log('Code:', code ? `Present (length: ${code.length})` : 'Not present');
-  console.log('Error:', error || 'None');
+  logger.info('OAuth callback received:');
+  logger.info('Code:', code ? `Present (length: ${code.length})` : 'Not present');
+  logger.info('Error:', error || 'None');
   
   if (code) {
     // Add timestamp to prevent code reuse issues
@@ -56,7 +57,7 @@ app.get('/oauth/callback', (req, res) => {
     redirectUrl.searchParams.append('error', error);
   }
   
-  console.log('Redirecting to:', redirectUrl.toString());
+  logger.info('Redirecting to:', redirectUrl.toString());
   res.redirect(redirectUrl.toString());
 });
 
@@ -81,7 +82,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(500).json({
     status: 'error',
     message: err.message || 'Something went wrong on the server',
@@ -92,17 +93,17 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001; // Changed port from 3000 to 3001
 const httpServer = http.createServer(app);
 httpServer.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
+  logger.info(`HTTP Server running on port ${PORT}`);
   
   // Start token refresh scheduler in production
   if (process.env.NODE_ENV === 'production') {
     startTokenRefreshScheduler();
-    console.log('Token refresh scheduler started successfully');
+    logger.info('Token refresh scheduler started successfully');
   }
   
   // Initialize the message scheduler to process scheduled messages
   initializeScheduler();
-  console.log('Message scheduler initialized successfully');
+  logger.info('Message scheduler initialized successfully');
 });
 
 // Start HTTPS server for local development
@@ -115,9 +116,9 @@ if (process.env.NODE_ENV === 'development') {
     const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
     const httpsServer = https.createServer(credentials, app);
     httpsServer.listen(HTTPS_PORT, () => {
-      console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+      logger.info(`HTTPS Server running on port ${HTTPS_PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start HTTPS server:', error);
+    logger.error('Failed to start HTTPS server:', error);
   }
 }
