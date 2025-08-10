@@ -1,0 +1,182 @@
+/* Responsive Styles for Threadly Application */
+
+/* Base mobile styles - apply to screens smaller than 768px */
+@media (max-width: 767px) {
+  /* Layout adjustments */
+  .layout-container {
+    flex-direction: column;
+    position: relative; /* Establish a new stacking context */
+    isolation: isolate; /* Create a new stacking context for children */
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 60; /* Higher z-index to overlay on top of content */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+    will-change: transform;
+    opacity: 0;
+    /* Removed transition property to avoid conflict with animation */
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  
+  /* Specific styling for mobile sidebar */
+  .mobile-sidebar {
+    height: 100vh !important;
+    max-height: 100vh;
+    overflow-y: auto;
+    background-color: white; /* Ensure background is solid */
+    border-radius: 0 10px 10px 0; /* Add a slight rounded corner on the right side */
+    overscroll-behavior: contain; /* Prevent scrolling from propagating to the parent */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+  
+  /* Mobile sidebar visibility control */
+  .sidebar:not(.open) {
+    visibility: hidden;
+    /* Removed transition to avoid conflict with animation */
+  }
+  
+  .sidebar.open {
+    visibility: visible;
+    /* Removed transition to avoid conflict with animation */
+  }
+
+  .main-header {
+    position: sticky;
+    top: 0;
+    z-index: 50; /* Higher than content, lower than sidebar */
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: white; /* Ensure background is solid */
+  }
+  
+  /* Main content area should have proper z-index */
+  .main-content-area {
+    position: relative;
+    z-index: 40; /* Lower than header and sidebar */
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 55; /* Lower than sidebar, higher than main content */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px); /* Optional: add a slight blur effect */
+  }
+
+  .sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Component adjustments */
+  .dropdown-menu-content {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* Form adjustments */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Channel list adjustments */
+  .channel-item {
+    padding: 0.5rem;
+  }
+  
+  /* Text truncation for small screens */
+  .truncate-mobile {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+  
+  /* Adjust form inputs for mobile */
+  textarea, input, select, .select-trigger {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+  
+  /* Fix button sizes on mobile */
+  button {
+    touch-action: manipulation;
+  }
+  
+  /* Adjust spacing for mobile */
+  .p-mobile-reduced {
+    padding: 0.5rem !important;
+  }
+  
+  .my-mobile-reduced {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Tablet styles - apply to screens between 768px and 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Semi-compact sidebar */
+  .sidebar {
+    width: 220px;
+  }
+
+  /* Adjust content spacing */
+  .content-container {
+    padding: 1rem;
+  }
+
+  /* Form adjustments for tablet */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Moderate text truncation for tablets */
+  .truncate-tablet {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+  }
+}
+
+/* Desktop adjustments - maintain current layout */
+@media (min-width: 1024px) {
+  .mobile-menu-button {
+    display: none;
+  }
+  
+  /* Restore full width for desktop */
+  .truncate-mobile, .truncate-tablet {
+    max-width: none;
+    white-space: normal;
+  }
+}
+
+/* Global responsive utilities */
+.hide-on-mobile {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: initial !important;
+  }
+  
+  .hide-on-desktop {
+    display: none !important;
+  }
+}

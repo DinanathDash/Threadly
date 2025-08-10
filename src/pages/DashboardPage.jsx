@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from "sonner";
 import { format } from 'date-fns';
-import { MessageCircle, Calendar as CalendarIcon, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { MessageCircle, Calendar as CalendarIcon, Clock, ArrowRight, Loader2, Hash } from 'lucide-react';
 import InlineLoader from '@/components/ui/inline-loader';
+
+// Import dashboard scrolling fix
+import '@/styles/dashboard-scrolling-fix.css';
 
 export default function DashboardPage() {
   const { isConnected, slackWorkspace, isLoading } = useSlack();
@@ -81,13 +84,13 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative overflow-y-auto pb-6 dashboard-container">
       {/* Slack Connection Overlay */}
       {!isConnected && !isLoading && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card className="w-[450px] border border-slate-100 rounded-xl shadow-lg">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-[450px] border border-slate-100 rounded-xl shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="text-center text-xl text-slate-800">Connect with Slack</CardTitle>
+              <CardTitle className="text-center text-lg sm:text-xl text-slate-800">Connect with Slack</CardTitle>
               <CardDescription className="text-center text-slate-500">
                 You need to connect your Slack account to continue
               </CardDescription>
@@ -131,15 +134,99 @@ export default function DashboardPage() {
       )}
 
       {loading ? (
-        <div className="w-full flex flex-col justify-center items-center py-16 space-y-4">
+        <div className="w-full flex flex-col justify-center items-center py-10 sm:py-16 space-y-4">
           <div className="text-indigo-600">
-            <InlineLoader color="#4338CA" size="60px" />
+            <InlineLoader color="#4338CA" size="50px" />
           </div>
           <p className="text-slate-500 text-sm font-medium">Loading your dashboard...</p>
         </div>
       ) : (
         <>
-          <div className="grid gap-6 md:grid-cols-3">
+          {/* Stats Overview Section */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Overview</h2>
+            <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
+              <Card className="-py-4 bg-gradient-to-br from-indigo-50 to-white border border-slate-100 shadow-sm">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-500">Messages Sent</span>
+                    <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
+                      <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold text-indigo-700">{Math.floor(Math.random() * 100)}</span>
+                    <div className="text-xs text-green-600 flex items-center mt-1">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
+                        <path d="M7 17L17 7M17 7H8M17 7V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>8% this week</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="-py-4 bg-gradient-to-br from-purple-50 to-white border border-slate-100 shadow-sm">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-500">Scheduled</span>
+                    <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                      <CalendarIcon className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold text-purple-700">{scheduledMessages.length}</span>
+                    <div className="text-xs text-slate-500 flex items-center mt-1">
+                      <span>Upcoming messages</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="-py-4 bg-gradient-to-br from-blue-50 to-white border border-slate-100 shadow-sm">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-500">Channels</span>
+                    <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                      <Hash className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold text-blue-700">{Math.floor(Math.random() * 10) + 3}</span>
+                    <div className="text-xs text-blue-600 flex items-center mt-1">
+                      <span>Active channels</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="-py-4 bg-gradient-to-br from-emerald-50 to-white border border-slate-100 shadow-sm">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-500">Efficiency</span>
+                    <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold text-emerald-700">93%</span>
+                    <div className="text-xs text-emerald-600 flex items-center mt-1">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
+                        <path d="M7 17L17 7M17 7H8M17 7V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>5% improvement</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Quick Actions Section */}
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Quick Actions</h2>
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             <Card className="bg-white border border-slate-100 shadow-sm hover:shadow transition-all">
               <CardHeader className="-mb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -201,8 +288,10 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {isConnected && scheduledMessages.length > 0 && (
-            <div className="mt-10">
+          {/* Grid layout for activities and tips */}
+          <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column - Upcoming Messages */}
+            <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-800">Upcoming Messages</h2>
                 <Button 
@@ -216,33 +305,165 @@ export default function DashboardPage() {
 
               <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
                 <div className="divide-y divide-slate-100">
-                  {scheduledMessages.slice(0, 5).map(message => (
-                    <div key={message.id} className="p-4 hover:bg-slate-50 transition-colors">
-                      <div className="flex justify-between mb-2">
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
-                          <h3 className="text-sm font-medium text-slate-800">
-                            #{message.channelId}
-                          </h3>
+                  {isConnected && scheduledMessages.length > 0 ? (
+                    scheduledMessages.slice(0, 5).map(message => (
+                      <div key={message.id} className="p-3 sm:p-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 mb-2">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+                            <h3 className="text-sm font-medium text-slate-800 truncate-mobile">
+                              #{message.channelId}
+                            </h3>
+                          </div>
+                          <span className="text-xs text-slate-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" strokeWidth={1.5} />
+                            {format(message.scheduledTime, 'MMM d, yyyy h:mm a')}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-500 flex items-center">
-                          <Clock className="h-3 w-3 mr-1" strokeWidth={1.5} />
-                          {format(message.scheduledTime, 'MMM d, yyyy h:mm a')}
-                        </span>
+                        <p className="text-sm text-slate-600 truncate">{message.message}</p>
                       </div>
-                      <p className="text-sm text-slate-600 truncate">{message.message}</p>
-                    </div>
-                  ))}
-
-                  {scheduledMessages.length === 0 && (
+                    ))
+                  ) : (
                     <div className="p-8 text-center">
                       <p className="text-slate-500">No upcoming scheduled messages</p>
+                      <Button 
+                        className="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700" 
+                        variant="ghost"
+                        onClick={() => navigate('/send-message?schedule=true')}
+                      >
+                        Schedule Your First Message
+                      </Button>
                     </div>
                   )}
                 </div>
               </div>
+              
+              {/* Recent Activity Feed */}
+              <div className="mt-6">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Recent Activity</h2>
+                <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 space-y-6">
+                    {/* Activity timeline */}
+                    <div className="relative pl-6 border-l-2 border-slate-200">
+                      <div className="absolute w-3 h-3 bg-green-500 rounded-full -left-[7px] top-1"></div>
+                      <div className="mb-1 flex justify-between items-center">
+                        <p className="text-sm font-medium">Message sent successfully</p>
+                        <span className="text-xs text-slate-500">Just now</span>
+                      </div>
+                      <p className="text-xs text-slate-500">Your message to #general was delivered</p>
+                    </div>
+                    
+                    <div className="relative pl-6 border-l-2 border-slate-200">
+                      <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-[7px] top-1"></div>
+                      <div className="mb-1 flex justify-between items-center">
+                        <p className="text-sm font-medium">Message scheduled</p>
+                        <span className="text-xs text-slate-500">2 hours ago</span>
+                      </div>
+                      <p className="text-xs text-slate-500">You scheduled a message for tomorrow at 9:00 AM</p>
+                    </div>
+                    
+                    <div className="relative pl-6 border-l-2 border-slate-200">
+                      <div className="absolute w-3 h-3 bg-purple-500 rounded-full -left-[7px] top-1"></div>
+                      <div className="mb-1 flex justify-between items-center">
+                        <p className="text-sm font-medium">Slack workspace connected</p>
+                        <span className="text-xs text-slate-500">Yesterday</span>
+                      </div>
+                      <p className="text-xs text-slate-500">Successfully connected to your Slack workspace</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+            
+            {/* Right column - Tips and info */}
+            <div className="space-y-6">
+              {/* Tips Card */}
+              <Card className="bg-gradient-to-br from-indigo-50 to-white border border-slate-100 overflow-hidden">
+                <CardHeader className="border-b border-indigo-100/50">
+                  <CardTitle className="text-lg font-medium text-indigo-800 -mb-4">Threadly Tips</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex gap-3">
+                      <div className="bg-indigo-100 text-indigo-700 rounded-full p-1 h-fit w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-indigo-900">Schedule Recurring Messages</h3>
+                        <p className="text-xs text-indigo-700 mt-1">Set up daily or weekly messages for team updates</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <div className="bg-indigo-100 text-indigo-700 rounded-full p-1 h-fit w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-indigo-900">Use Message Templates</h3>
+                        <p className="text-xs text-indigo-700 mt-1">Save time with reusable message formats</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <div className="bg-indigo-100 text-indigo-700 rounded-full p-1 h-fit w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-indigo-900">Optimize Send Times</h3>
+                        <p className="text-xs text-indigo-700 mt-1">Schedule messages when your team is most active</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Usage Stats */}
+              <Card className="bg-white border border-slate-100">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-800 -mb-4">Usage Stats</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium text-slate-700">Messages Quota</span>
+                        <span className="text-slate-500">65%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '65%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium text-slate-700">API Requests</span>
+                        <span className="text-slate-500">32%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: '32%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium text-slate-700">Storage</span>
+                        <span className="text-slate-500">8%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '8%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </>
       )}
     </div>

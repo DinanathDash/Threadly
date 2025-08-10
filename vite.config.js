@@ -15,13 +15,15 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to backend server
       '/api': {
-        target: 'http://localhost:3001',
+        // target: 'http://localhost:3001',
+        target: 'https://threadly-32ln.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       // Proxy OAuth callback requests to backend server
       '/oauth/callback': {
-        target: 'http://localhost:3001',
+        // target: 'http://localhost:3001',
+        target: 'https://threadly-32ln.onrender.com',
         changeOrigin: true,
         secure: false,
       }

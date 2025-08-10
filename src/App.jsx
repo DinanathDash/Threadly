@@ -8,6 +8,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 
+// Import styles
+import '@/styles/responsive.css';
+
 // Import theme
 import theme from './lib/theme';
 

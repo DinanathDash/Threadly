@@ -1,6 +1,6 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { useState } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useSlack } from '../context/SlackContext';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalLoading } from '../context/GlobalLoadingContext';
@@ -17,7 +17,9 @@ import {
   User,
   CircleUser,
   Settings,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu,
+  X
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -30,6 +32,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Logo from '@/assets/Logo.svg';
 import InlineLoader from '@/components/ui/inline-loader';
+import { useIsMobile } from '../hooks/use-mobile';
+import '../styles/responsive.css';
+import '../styles/mobile-fixes.css';
 
 export default function MainLayout() {
   const { isConnected, slackWorkspace, disconnectSlack, channels, loadingChannels } = useSlack();
@@ -37,6 +42,92 @@ export default function MainLayout() {
   const { currentUser, signOut, getSafeProfileImageUrl, setProfileImageError } = useAuth();
   const [channelSectionsExpanded, setChannelSectionsExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(3);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const isMobile = useIsMobile();
+  const location = useLocation();
+
+  // Close sidebar when route changes
+  useEffect(() => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile]);
+
+  // Toggle body class for sidebar open state
+  useEffect(() => {
+    if (isMobile) {
+      if (sidebarOpen) {
+        document.body.classList.add('sidebar-open');
+      } else {
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [sidebarOpen, isMobile]);
+
+  // Close sidebar when clicking outside on mobile (optimized)
+  useEffect(() => {
+    // Only set up the handler if sidebar is open and we're on mobile
+    if (!sidebarOpen || !isMobile) return;
+
+    // Handler for outside clicks
+    const handleOutsideClick = (e) => {
+      // Make sure the click isn't on the sidebar or the toggle button
+      if (!e.target.closest('.sidebar') &&
+        !e.target.closest('.mobile-menu-button')) {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Add with a delay to ensure animation completes first
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [sidebarOpen, isMobile]);
+
+  // Demo effect: Simulate receiving Slack notifications
+  useEffect(() => {
+    // Only simulate notifications if connected to Slack
+    if (!isConnected) return;
+
+    // Function to simulate a new notification
+    const simulateNewNotification = () => {
+      // Randomly decide if we should add a notification (30% chance)
+      if (Math.random() < 0.3) {
+        setNotificationCount(prev => prev + 1);
+
+        // Optional: Show browser notification if supported
+        if (Notification.permission === "granted") {
+          const notification = new Notification("New Slack Message", {
+            body: "You have a new message in Slack",
+            icon: "/favicon.ico"
+          });
+        }
+      }
+    };
+
+    // Set up interval to potentially trigger notifications (every 30-60 seconds)
+    const interval = setInterval(() => {
+      simulateNewNotification();
+    }, Math.random() * 30000 + 30000);
+
+    // Request browser notification permissions
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+
+    return () => clearInterval(interval);
+  }, [isConnected]);
 
   const handlePageAction = async (action) => {
     setIsLoading(true);
@@ -56,9 +147,23 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-white">
+    <div className="h-screen flex overflow-hidden bg-white layout-container relative">
+      {/* Mobile overlay */}
+      {isMobile && (
+        <div
+          className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requestAnimationFrame(() => {
+              setSidebarOpen(false);
+            });
+          }}
+        />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="w-[240px] bg-white border-r border-slate-200 flex flex-col">
+      <aside className={`sidebar bg-white border-r border-slate-200 flex flex-col ${sidebarOpen ? 'open' : ''} ${isMobile ? 'mobile-sidebar w-[85%] max-w-[280px]' : 'w-[240px]'}`}>
         {/* Sidebar Header with Logo */}
         <div className="h-16 flex items-center justify-center border-b border-slate-100">
           <img src={Logo} alt="Threadly Logo" className="h-10 w-auto" />
@@ -148,10 +253,9 @@ export default function MainLayout() {
                                 key={channel.id}
                                 to={`/channel/${channel.id}`}
                                 className={({ isActive }) =>
-                                  `flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left ${
-                                    isActive
-                                      ? 'bg-indigo-50 text-indigo-700'
-                                      : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+                                  `flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left ${isActive
+                                    ? 'bg-indigo-50 text-indigo-700'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
                                   }`
                                 }
                               >
@@ -192,30 +296,48 @@ export default function MainLayout() {
         {/* Workspace Section */}
         <div className="mt-auto p-4 border-t border-slate-100">
           {isConnected ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></div>
-                <span className="text-sm font-medium text-slate-700">{slackWorkspace?.name || 'Workspace'}</span>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></div>
+                  <span className="text-sm font-medium text-slate-700">{slackWorkspace?.name || 'Workspace'}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      // First disconnect the current connection
+                      await disconnectSlack();
+                      // Then redirect to Slack authorization
+                      const { getSlackOAuthUrl } = await import('../services/slackService');
+                      const url = await getSlackOAuthUrl();
+                      window.location.href = url;
+                    } catch (error) {
+                      console.error('Error during reconnection:', error);
+                    }
+                  }}
+                  className="text-xs text-slate-500 hover:text-indigo-600"
+                >
+                  Reconnect
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    // First disconnect the current connection
-                    await disconnectSlack();
-                    // Then redirect to Slack authorization
-                    const { getSlackOAuthUrl } = await import('../services/slackService');
-                    const url = await getSlackOAuthUrl();
-                    window.location.href = url;
-                  } catch (error) {
-                    console.error('Error during reconnection:', error);
-                  }
-                }}
-                className="text-xs text-slate-500 hover:text-indigo-600"
-              >
-                Reconnect
-              </Button>
+
+              {/* Demo: Test notification button */}
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNotificationCount(prev => prev + 1)}
+                  className="w-full text-xs"
+                >
+                  <Bell className="h-3 w-3 mr-1" />
+                  Test Notification
+                </Button>
+                <div className="text-xs text-slate-400 text-center mt-1">
+                  Demo mode
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center">
@@ -226,19 +348,110 @@ export default function MainLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 main-content-area">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-200 px-6 flex items-center justify-between">
-          <div>
+        <header className="h-16 border-b border-slate-200 px-4 md:px-6 flex items-center justify-between main-header">
+          <div className="flex items-center gap-2">
+            {isMobile && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent default behavior
+                  e.stopPropagation(); // Prevent event bubbling
+
+                  // Use RAF to ensure UI is ready before state changes
+                  requestAnimationFrame(() => {
+                    setSidebarOpen(prevState => !prevState);
+                  });
+                }}
+                className="mobile-menu-button p-2 rounded-md hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="Toggle sidebar menu"
+              >
+                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
             <h1 className="text-xl font-semibold text-slate-800">
-              {isConnected ? 'Connected to ' + slackWorkspace?.name : 'Dashboard'}
+              {isConnected ? slackWorkspace?.name + ' Workspace' : 'Dashboard'}
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-              <Bell size={18} />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 relative">
+                  <Bell size={18} />
+                  {/* Notification badge - only shows when there are notifications */}
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                      {notificationCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  <span>Notifications</span>
+                  {notificationCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setNotificationCount(0)}
+                      className="text-xs text-slate-500 hover:text-indigo-600"
+                    >
+                      Mark all as read
+                    </Button>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notificationCount > 0 ? (
+                  <>
+                    <DropdownMenuItem className="cursor-default p-3 hover:bg-slate-50">
+                      <div className="flex flex-row gap-3">
+                        <div className="bg-slate-100 rounded-full p-2 flex-shrink-0 h-10 w-10 flex items-center justify-center">
+                          <MessageCircle size={16} className="text-indigo-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-sm font-medium">New message in #general</p>
+                          <p className="text-xs text-slate-500 mt-1">@sarah.jones: "Team, can someone review the latest PR?"</p>
+                          <p className="text-xs text-slate-400 mt-1">3 minutes ago</p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-default p-3 hover:bg-slate-50">
+                      <div className="flex flex-row gap-3">
+                        <div className="bg-slate-100 rounded-full p-2 flex-shrink-0 h-10 w-10 flex items-center justify-center">
+                          <MessageCircle size={16} className="text-indigo-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-sm font-medium">New message in #dev-team</p>
+                          <p className="text-xs text-slate-500 mt-1">@mike.wilson: "The deployment is complete!"</p>
+                          <p className="text-xs text-slate-400 mt-1">12 minutes ago</p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-default p-3 hover:bg-slate-50">
+                      <div className="flex flex-row gap-3">
+                        <div className="bg-slate-100 rounded-full p-2 flex-shrink-0 h-10 w-10 flex items-center justify-center">
+                          <MessageCircle size={16} className="text-indigo-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-sm font-medium">Direct message from @alex</p>
+                          <p className="text-xs text-slate-500 mt-1">@alex: "Can we meet to discuss the requirements?"</p>
+                          <p className="text-xs text-slate-400 mt-1">25 minutes ago</p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <div className="py-8 flex flex-col items-center justify-center text-center px-4">
+                    <Bell size={24} className="text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-600">No new notifications</p>
+                    <p className="text-xs text-slate-400 mt-1">You're all caught up!</p>
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -251,14 +464,14 @@ export default function MainLayout() {
                         onError={(e) => {
                           const error = e?.target?.error;
                           console.log('Profile image failed to load, using fallback', error);
-                          
+
                           // Handle rate limiting specifically (429 error)
                           if (error && error.message && error.message.includes('429')) {
                             console.warn('Rate limit detected when loading profile image');
                             // Store a flag in localStorage to remember rate limiting for this user
                             localStorage.setItem(`image_rate_limited_${currentUser.uid}`, 'true');
                           }
-                          
+
                           setProfileImageError(true);
                           e.target.style.display = 'none'; // Hide the broken image
                         }}
@@ -279,7 +492,7 @@ export default function MainLayout() {
                   )}
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuContent align="end" className="w-auto mt-2">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
                     <span className="font-medium">{currentUser?.displayName || 'User'}</span>
@@ -297,11 +510,11 @@ export default function MainLayout() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-white p-6">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-auto bg-white p-3 sm:p-4 md:p-6 content-container">
+          <div className="max-w-6xl mx-auto h-full">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-full py-20">
-                <InlineLoader color="#4338CA" size="60px" />
+              <div className="flex flex-col items-center justify-center h-full py-10 md:py-20">
+                <InlineLoader color="#4338CA" size={isMobile ? "40px" : "60px"} />
                 <p className="mt-4 text-slate-600">Loading content...</p>
               </div>
             ) : (

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSlack } from '@/context/SlackContext';
 import { getScheduledMessages, getSentMessages, cancelScheduledMessage } from '@/services/messageService';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,10 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CalendarIcon, Clock, AlertTriangle, X, Check } from 'lucide-react';
 import { format, isPast } from 'date-fns';
+import { MessageCard } from '@/components/ui/message-card';
 
 export default function ScheduledMessagesPage() {
   const { isConnected, isLoading } = useSlack();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // State
   const [upcomingMessages, setUpcomingMessages] = useState([]);
@@ -86,7 +89,7 @@ export default function ScheduledMessagesPage() {
   };
   
   return (
-    <div className="container mx-auto max-w-6xl space-y-8">
+    <div className={`container mx-auto max-w-6xl space-y-8 ${isMobile ? 'px-4' : ''}`}>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Scheduled Messages</h1>
         <p className="text-muted-foreground">
@@ -119,115 +122,131 @@ export default function ScheduledMessagesPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
           ) : upcomingMessages.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Channel</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Scheduled For</TableHead>
-                  <TableHead className="w-[150px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            isMobile ? (
+              <div className="space-y-4">
                 {upcomingMessages
                   .sort((a, b) => a.scheduledTime - b.scheduledTime)
                   .map(message => (
-                    <TableRow key={message.id}>
-                      <TableCell>#{message.channelId}</TableCell>
-                      <TableCell className="max-w-md">
-                        <p className="truncate">{message.message}</p>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="h-3 w-3" />
-                            <span className="text-sm">
-                              {format(message.scheduledTime, "MMM d, yyyy")}
-                            </span>
+                    <MessageCard
+                      key={message.id}
+                      message={message}
+                      type="upcoming"
+                      onCancel={handleCancelMessage}
+                      cancelling={cancelling}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Channel</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Scheduled For</TableHead>
+                    <TableHead className="w-[150px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {upcomingMessages
+                    .sort((a, b) => a.scheduledTime - b.scheduledTime)
+                    .map(message => (
+                      <TableRow key={message.id}>
+                        <TableCell>#{message.channelId}</TableCell>
+                        <TableCell className="max-w-md">
+                          <p className="truncate">{message.message}</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="h-3 w-3" />
+                              <span className="text-sm">
+                                {format(message.scheduledTime, "MMM d, yyyy")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span className="text-sm">
+                                {format(message.scheduledTime, "h:mm a")}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span className="text-sm">
-                              {format(message.scheduledTime, "h:mm a")}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="w-full">
-                              {isPast(message.scheduledTime) ? 'View' : 'Cancel'}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>
-                                {isPast(message.scheduledTime) 
-                                  ? 'Message in Processing' 
-                                  : 'Cancel Scheduled Message'
-                                }
-                              </DialogTitle>
-                              <DialogDescription>
-                                {isPast(message.scheduledTime)
-                                  ? 'This message is currently being processed for delivery.'
-                                  : 'Are you sure you want to cancel this scheduled message?'
-                                }
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            <div className="space-y-4 py-4">
-                              <div className="grid gap-2">
-                                <h4 className="font-medium">Channel</h4>
-                                <p className="text-sm">#{message.channelId}</p>
-                              </div>
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="w-full">
+                                {isPast(message.scheduledTime) ? 'View' : 'Cancel'}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>
+                                  {isPast(message.scheduledTime) 
+                                    ? 'Message in Processing' 
+                                    : 'Cancel Scheduled Message'
+                                  }
+                                </DialogTitle>
+                                <DialogDescription>
+                                  {isPast(message.scheduledTime)
+                                    ? 'This message is currently being processed for delivery.'
+                                    : 'Are you sure you want to cancel this scheduled message?'
+                                  }
+                                </DialogDescription>
+                              </DialogHeader>
                               
-                              <div className="grid gap-2">
-                                <h4 className="font-medium">Scheduled for</h4>
-                                <p className="text-sm">
-                                  {format(message.scheduledTime, "PPPp")}
-                                </p>
-                              </div>
-                              
-                              <div className="grid gap-2">
-                                <h4 className="font-medium">Message</h4>
-                                <div className="rounded-md bg-muted p-3">
-                                  <p className="text-sm whitespace-pre-line">
-                                    {message.message}
+                              <div className="space-y-4 py-4">
+                                <div className="grid gap-2">
+                                  <h4 className="font-medium">Channel</h4>
+                                  <p className="text-sm">#{message.channelId}</p>
+                                </div>
+                                
+                                <div className="grid gap-2">
+                                  <h4 className="font-medium">Scheduled for</h4>
+                                  <p className="text-sm">
+                                    {format(message.scheduledTime, "PPPp")}
                                   </p>
                                 </div>
+                                
+                                <div className="grid gap-2">
+                                  <h4 className="font-medium">Message</h4>
+                                  <div className="rounded-md bg-muted p-3">
+                                    <p className="text-sm whitespace-pre-line">
+                                      {message.message}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <DialogFooter>
-                              {!isPast(message.scheduledTime) && (
-                                <>
-                                  <Button variant="ghost" type="button">
-                                    Keep Scheduled
-                                  </Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    type="button"
-                                    disabled={cancelling === message.id}
-                                    onClick={() => handleCancelMessage(message.id)}
-                                  >
-                                    {cancelling === message.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    ) : (
-                                      <X className="h-4 w-4 mr-2" />
-                                    )}
-                                    Cancel Message
-                                  </Button>
-                                </>
-                              )}
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
+                              
+                              <DialogFooter>
+                                {!isPast(message.scheduledTime) && (
+                                  <>
+                                    <Button variant="ghost" type="button">
+                                      Keep Scheduled
+                                    </Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      type="button"
+                                      disabled={cancelling === message.id}
+                                      onClick={() => handleCancelMessage(message.id)}
+                                    >
+                                      {cancelling === message.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      ) : (
+                                        <X className="h-4 w-4 mr-2" />
+                                      )}
+                                      Cancel Message
+                                    </Button>
+                                  </>
+                                )}
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            )
           ) : (
             <div className="flex flex-col items-center justify-center py-8 gap-4">
               <div className="rounded-full bg-muted p-3">
@@ -265,49 +284,63 @@ export default function ScheduledMessagesPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : sentMessages.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Channel</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Sent At</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                isMobile ? (
+                  <div className="space-y-4">
                     {sentMessages
                       .sort((a, b) => b.sentAt - a.sentAt) // Show newest first
                       .map(message => (
-                        <TableRow key={message.id}>
-                          <TableCell>#{message.channelId}</TableCell>
-                          <TableCell className="max-w-md">
-                            <p className="truncate">{message.message}</p>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-3 w-3" />
-                                <span className="text-sm">
-                                  {format(message.sentAt, "MMM d, yyyy")}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <span className="text-sm">
-                                  {format(message.sentAt, "h:mm a")}
-                                </span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                              <Check className="h-3 w-3 mr-1" /> Sent
-                            </span>
-                          </TableCell>
-                        </TableRow>
+                        <MessageCard
+                          key={message.id}
+                          message={message}
+                          type="sent"
+                        />
                       ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Channel</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Sent At</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sentMessages
+                        .sort((a, b) => b.sentAt - a.sentAt) // Show newest first
+                        .map(message => (
+                          <TableRow key={message.id}>
+                            <TableCell>#{message.channelId}</TableCell>
+                            <TableCell className="max-w-md">
+                              <p className="truncate">{message.message}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-1">
+                                  <CalendarIcon className="h-3 w-3" />
+                                  <span className="text-sm">
+                                    {format(message.sentAt, "MMM d, yyyy")}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span className="text-sm">
+                                    {format(message.sentAt, "h:mm a")}
+                                  </span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                                <Check className="h-3 w-3 mr-1" /> Sent
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 gap-4">
                   <div className="rounded-full bg-muted p-3">

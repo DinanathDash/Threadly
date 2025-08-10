@@ -220,9 +220,9 @@ export default function ChannelPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] overflow-hidden">
       {/* Channel Header */}
-      <div className="border-b border-slate-100 px-6 flex-shrink-0 flex items-center justify-between sticky top-0 bg-white z-10">
+      <div className="border-b border-slate-100 px-3 sm:px-6 py-2 flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between sticky top-0 bg-white z-10 gap-2 sm:gap-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-slate-800">
+          <h1 className="text-lg font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-full">
             # {channelInfo?.name || 'Loading...'}
           </h1>
           {channelInfo?.isPrivate && (
@@ -254,7 +254,7 @@ export default function ChannelPage() {
                 <Info className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="mr-10">
+            <PopoverContent className="mr-10 ml-4">
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Channel Info</h4>
                 <Separator />
@@ -286,7 +286,7 @@ export default function ChannelPage() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Messages Area - flex-1 to take remaining space */}
         <div className="flex-1 overflow-hidden relative">
-          <div className="h-full overflow-y-auto px-6 py-2 messages-scroll-container" ref={scrollAreaRef}>
+          <div className="h-full overflow-y-auto px-3 sm:px-6 py-2 messages-scroll-container" ref={scrollAreaRef}>
             <div className="flex flex-col justify-end min-h-full">
               {/* Load more button */}
               {/* Load more button */}
@@ -354,12 +354,12 @@ export default function ChannelPage() {
                     </div>
                   ) : (
                     messages.map(msg => (
-                      <div key={msg.id} className="flex items-start gap-3 group">
-                        <Avatar className="h-8 w-8">
+                      <div key={msg.id} className="flex items-start gap-2 sm:gap-3 group">
+                        <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
                           {msg.userDetails?.avatar ? (
                             <AvatarImage src={msg.userDetails.avatar} alt={msg.userDetails.name || 'User'} />
                           ) : (
-                            <AvatarFallback className="bg-indigo-100 text-indigo-700">
+                            <AvatarFallback className="bg-indigo-100 text-indigo-700 text-xs sm:text-sm">
                               {msg.botName ? msg.botName.charAt(0).toUpperCase() : 
                                msg.userDetails?.name ? msg.userDetails.name.charAt(0).toUpperCase() : 
                                msg.user ? msg.user.charAt(0).toUpperCase() : 'T'}
@@ -367,9 +367,9 @@ export default function ChannelPage() {
                           )}
                         </Avatar>
                         
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-full">
                               {msg.botName || msg.userDetails?.name || (msg.isBot ? 'Threadly Bot' : 'User')}
                               {msg.isBot && <span className="ml-1 text-xs text-gray-500">BOT</span>}
                             </span>
@@ -377,7 +377,7 @@ export default function ChannelPage() {
                               {formatTimestamp(msg.timestamp)}
                             </span>
                           </div>
-                          <div className="text-sm whitespace-pre-wrap">{msg.text}</div>
+                          <div className="text-xs sm:text-sm whitespace-pre-wrap break-words">{msg.text}</div>
                           
                           {/* Attachments if any */}
                           {msg.attachments && msg.attachments.length > 0 && (
@@ -414,7 +414,7 @@ export default function ChannelPage() {
         </div>
         
         {/* Message Input - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-slate-200 p-4 bg-white shadow-md">
+        <div className="flex-shrink-0 border-t border-slate-200 p-3 sm:p-4 bg-white shadow-md">
           <div className="flex items-end gap-2">
             <Textarea
               value={message}

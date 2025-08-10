@@ -150,14 +150,14 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen flex-col md:flex-row">
             {loading && <LoadingScreen message="Authenticating..." />}
             {/* Left panel - form */}
-            <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8 bg-white">
+            <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-white">
                 <div className="w-full max-w-md login-card">
-                    <div className="mb-8 login-form-element">
-                        <img src={Logo} alt="Threadly" className="h-8 mb-8" />
-                        <h1 className="text-2xl font-bold text-gray-900">
+                    <div className="mb-6 md:mb-8 login-form-element">
+                        <img src={Logo} alt="Threadly" className="h-8 mb-6 md:mb-8" />
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                             {forgotPasswordMode ? 'Reset password' : activeTab === 'login' ? 'Log in to your account' : 'Create account'}
                         </h1>
                         <p className="text-sm text-gray-500 mt-2">

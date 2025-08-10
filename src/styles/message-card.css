@@ -1,0 +1,28 @@
+/* Mobile message card styles */
+@media (max-width: 768px) {
+  .message-card-container {
+    padding: 0.5rem;
+  }
+  
+  /* Add a subtle shadow effect on hover */
+  .message-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .message-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Add more breathing room */
+  .card-item {
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Channel label styles */
+  .channel-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+}
