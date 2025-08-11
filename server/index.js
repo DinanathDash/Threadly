@@ -30,7 +30,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['https://threadly.web.app', 'http://localhost:5173'],
+  origin: ['https://threadly.web.app', 'http://localhost:5173', 'https://threadly-32ln.onrender.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

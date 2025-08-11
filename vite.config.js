@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // In development, this will be undefined, which is what we want for relative paths
       // In production, this will be the URL to the backend
-      __BACKEND_URL__: isProduction ? JSON.stringify('https://threadly.onrender.com') : 'undefined'
+      __BACKEND_URL__: isProduction ? JSON.stringify('https://threadly-32ln.onrender.com') : 'undefined'
     }
   }
 })

@@ -322,22 +322,6 @@ export default function MainLayout() {
                   Reconnect
                 </Button>
               </div>
-
-              {/* Demo: Test notification button */}
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setNotificationCount(prev => prev + 1)}
-                  className="w-full text-xs"
-                >
-                  <Bell className="h-3 w-3 mr-1" />
-                  Test Notification
-                </Button>
-                <div className="text-xs text-slate-400 text-center mt-1">
-                  Demo mode
-                </div>
-              </div>
             </div>
           ) : (
             <div className="text-center">
