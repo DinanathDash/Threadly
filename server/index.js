@@ -13,6 +13,7 @@ import slackRoutes from './routes/slack.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import tokenRoutes from './routes/tokenRoutes.js';
 import channelRoutes from './routes/channelRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
 
 // Import token refresh scheduler for production
 import { startTokenRefreshScheduler } from './services/tokenRefreshService.js';
@@ -43,6 +44,7 @@ app.use('/api/slack', slackRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/channels', channelRoutes);
+app.use('/api/support', supportRoutes);
 
 // OAuth callback route that redirects to the frontend
 app.get('/oauth/callback', (req, res) => {

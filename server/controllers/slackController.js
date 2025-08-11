@@ -358,13 +358,25 @@ export const cancelMessage = async (req, res, next) => {
       });
     }
     
-    const result = await cancelSlackMsg(messageId);
-    
-    res.status(200).json({
-      status: 'success',
-      data: result
-    });
+    try {
+      const result = await cancelSlackMsg(messageId);
+      
+      res.status(200).json({
+        status: 'success',
+        data: result
+      });
+    } catch (cancelError) {
+      console.error('Error in cancelSlackMsg:', cancelError);
+      res.status(500).json({
+        status: 'error',
+        message: `Failed to cancel scheduled message: ${cancelError.message}`
+      });
+    }
   } catch (error) {
-    next(error);
+    console.error('Unexpected error in cancelMessage controller:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An unexpected error occurred while cancelling the message'
+    });
   }
 };

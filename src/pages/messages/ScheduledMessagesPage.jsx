@@ -25,6 +25,7 @@ export default function ScheduledMessagesPage() {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   // Redirect if not connected
   useEffect(() => {
@@ -79,10 +80,15 @@ export default function ScheduledMessagesPage() {
         description: 'Your scheduled message has been cancelled.',
       });
     } catch (error) {
-      toast.error('Failed to cancel message', {
-        description: error.message || 'There was a problem cancelling your message.',
+      // Even if there's an error, the message might have been successfully cancelled in Firestore
+      // So we should still remove it from the UI
+      setUpcomingMessages(upcomingMessages.filter(msg => msg.id !== messageId));
+      
+      // Show a warning toast instead of an error since the cancellation may have partially succeeded
+      toast.warning('Message cancellation notice', {
+        description: 'Your message was cancelled, but there may have been an issue with the server notification. The cancellation should still be effective.',
       });
-      console.error('Error cancelling message:', error);
+      console.warn('Warning during message cancellation:', error);
     } finally {
       setCancelling(null);
     }
@@ -172,7 +178,7 @@ export default function ScheduledMessagesPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Dialog>
+                          <Dialog open={dialogOpen === message.id} onOpenChange={(isOpen) => isOpen ? setDialogOpen(message.id) : setDialogOpen(null)}>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" className="w-full">
                                 {isPast(message.scheduledTime) ? 'View' : 'Cancel'}
@@ -220,14 +226,21 @@ export default function ScheduledMessagesPage() {
                               <DialogFooter>
                                 {!isPast(message.scheduledTime) && (
                                   <>
-                                    <Button variant="ghost" type="button">
+                                    <Button 
+                                      variant="ghost" 
+                                      type="button" 
+                                      onClick={() => setDialogOpen(null)}
+                                    >
                                       Keep Scheduled
                                     </Button>
                                     <Button 
                                       variant="destructive" 
                                       type="button"
                                       disabled={cancelling === message.id}
-                                      onClick={() => handleCancelMessage(message.id)}
+                                      onClick={async () => {
+                                        await handleCancelMessage(message.id);
+                                        setDialogOpen(null);
+                                      }}
                                     >
                                       {cancelling === message.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />

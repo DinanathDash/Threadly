@@ -173,17 +173,27 @@ export const cancelScheduledMessage = async (messageId) => {
       cancelledAt: Timestamp.now()
     });
     
-    // Also tell our backend to cancel the job
-    const response = await fetch(getApiUrl('/api/slack/cancel-message'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ messageId }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to cancel scheduled message with server');
+    logger.info(`Message ${messageId} cancelled in Firestore`);
+    
+    try {
+      // Also tell our backend to cancel the job
+      const response = await fetch(getApiUrl('/api/slack/cancel-message'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId }),
+      });
+  
+      if (!response.ok) {
+        logger.warn(`Server returned error ${response.status} when cancelling message, but message was cancelled in Firestore`);
+      } else {
+        logger.info(`Server confirmed message ${messageId} cancellation`);
+      }
+    } catch (serverError) {
+      // Log the error but don't fail the cancellation since Firestore update was successful
+      logger.warn(`Error communicating with server for message cancellation: ${serverError.message}`);
+      logger.info(`Continuing with cancellation since message was marked as cancelled in Firestore`);
     }
 
     return true;

@@ -178,14 +178,24 @@ export function AuthProvider({ children }) {
         // Store userId in localStorage for API calls
         localStorage.setItem('userId', user.uid);
         
+        // Get ID token for API authentication
+        try {
+          const token = await user.getIdToken(true);
+          localStorage.setItem('authToken', token);
+          logger.info('Auth token generated and stored');
+        } catch (tokenError) {
+          logger.error('Failed to get auth token:', tokenError);
+        }
+        
         // Get additional user data from Firestore
         const userData = await getUserData(user.uid);
         setCurrentUser({ ...user, ...userData });
       } else {
         logger.info('User signed out');
         setCurrentUser(null);
-        // Clear userId from localStorage
+        // Clear user data from localStorage
         localStorage.removeItem('userId');
+        localStorage.removeItem('authToken');
         // Redirect to login page if not authenticated
         navigate('/');
       }
@@ -206,6 +216,23 @@ export function AuthProvider({ children }) {
     const interval = setInterval(clearRateLimitFlags, 60 * 60 * 1000);
     
     return () => clearInterval(interval);
+  }, [currentUser]);
+  
+  // Effect to refresh the ID token every 50 minutes (tokens expire after 60 minutes)
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const tokenRefreshInterval = setInterval(async () => {
+      try {
+        logger.info('Refreshing auth token');
+        const token = await currentUser.getIdToken(true);
+        localStorage.setItem('authToken', token);
+      } catch (error) {
+        logger.error('Error refreshing auth token:', error);
+      }
+    }, 50 * 60 * 1000); // Every 50 minutes
+    
+    return () => clearInterval(tokenRefreshInterval);
   }, [currentUser]);
 
   const value = {

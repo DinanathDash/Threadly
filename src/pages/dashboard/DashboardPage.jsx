@@ -15,7 +15,7 @@ import InlineLoader from '@/components/ui/inline-loader';
 import '@/styles/dashboard-scrolling-fix.css';
 
 export default function DashboardPage() {
-  const { isConnected, slackWorkspace, isLoading } = useSlack();
+  const { isConnected, slackWorkspace, isLoading, channels } = useSlack();
   const { currentUser } = useAuth();
   const [scheduledMessages, setScheduledMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-2xl font-semibold text-blue-700">{Math.floor(Math.random() * 10) + 3}</span>
+                    <span className="text-2xl font-semibold text-blue-700">{channels ? channels.length : 0}</span>
                     <div className="text-xs text-blue-600 flex items-center mt-1">
                       <span>Active channels</span>
                     </div>

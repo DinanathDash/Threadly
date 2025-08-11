@@ -18,14 +18,16 @@ import theme from './lib/theme';
 import MainLayout from './layouts/MainLayout';
 
 // Import pages
-import LoginPage from './pages/LoginPage';
-import OAuthCallbackPage from './pages/OAuthCallbackPage';
-import DashboardPage from './pages/DashboardPage';
-import SendMessagePage from './pages/SendMessagePage';
-import ScheduledMessagesPage from './pages/ScheduledMessagesPage';
-import SlackTestPage from './pages/SlackTestPage';
-import ChannelPage from './pages/ChannelPage';
-import NotFoundPage from './pages/NotFoundPage';
+import LoginPage from './pages/auth/LoginPage';
+import OAuthCallbackPage from './pages/auth/OAuthCallbackPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import SlackTestPage from './pages/dashboard/SlackTestPage';
+import SendMessagePage from './pages/messages/SendMessagePage';
+import ScheduledMessagesPage from './pages/messages/ScheduledMessagesPage';
+import ChannelPage from './pages/messages/ChannelPage';
+import NotFoundPage from './pages/errors/NotFoundPage';
+import ErrorPage from './pages/errors/ErrorPage';
+import SupportPage from './pages/support/SupportPage';
 
 function App() {
   return (
@@ -61,6 +63,7 @@ function App() {
                     <Route path="/send-message" element={<SendMessagePage />} />
                     <Route path="/scheduled" element={<ScheduledMessagesPage />} />
                     <Route path="/channel/:channelId" element={<ChannelPage />} />
+                    <Route path="/support" element={<SupportPage />} />
                   </Route>
                 
                   {/* 404 Page */}

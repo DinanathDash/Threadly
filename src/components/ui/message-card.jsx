@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -7,6 +8,7 @@ import '@/styles/message-card.css';
 
 export function MessageCard({ message, type, onCancel, cancelling }) {
   const isSent = type === 'sent';
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <Card className="message-card">
@@ -80,7 +82,7 @@ export function MessageCard({ message, type, onCancel, cancelling }) {
       
       {!isSent && !isPast(message.scheduledTime) && (
         <CardFooter>
-          <Dialog>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="w-full">
                 Cancel
@@ -118,14 +120,21 @@ export function MessageCard({ message, type, onCancel, cancelling }) {
               </div>
               
               <DialogFooter>
-                <Button variant="ghost" type="button">
+                <Button 
+                  variant="ghost" 
+                  type="button" 
+                  onClick={() => setDialogOpen(false)}
+                >
                   Keep Scheduled
                 </Button>
                 <Button 
                   variant="destructive" 
                   type="button"
                   disabled={cancelling === message.id}
-                  onClick={() => onCancel(message.id)}
+                  onClick={async () => {
+                    await onCancel(message.id);
+                    setDialogOpen(false);
+                  }}
                 >
                   {cancelling === message.id ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
