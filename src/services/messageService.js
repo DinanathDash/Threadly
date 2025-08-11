@@ -1,6 +1,7 @@
 import { db } from './firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { getApiUrl } from '../config/api';
+import * as logger from '../lib/logger';
 
 // Sends an immediate message to Slack
 export const sendImmediateMessage = async (userId, channelId, message) => {
@@ -18,7 +19,7 @@ export const sendImmediateMessage = async (userId, channelId, message) => {
       throw new Error('Message content cannot be empty');
     }
     
-    console.log(`Sending message to channel ${channelId}`);
+    logger.info(`Sending message to channel`);
     
     const response = await fetch(getApiUrl('/api/slack/send-message'), {
       method: 'POST',
@@ -60,10 +61,10 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
     };
 
     const docRef = await addDoc(collection(db, 'scheduledMessages'), scheduledMessage);
-    console.log(`Message stored in database with ID: ${docRef.id}`);
+    logger.info(`Message stored in database with ID: ${docRef.id}`);
     
     // Also tell our backend about it to schedule the actual job
-    console.log(`Notifying backend about scheduled message: ${docRef.id}`);
+    logger.info(`Notifying backend about scheduled message`);
     const response = await fetch(getApiUrl('/api/slack/schedule-message'), {
       method: 'POST',
       headers: {
@@ -80,7 +81,7 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
 
     if (!response.ok) {
       // If backend scheduling fails, update status to failed
-      console.error('Backend scheduling failed:', await response.text());
+      logger.error('Backend scheduling failed:', await response.text());
       await updateDoc(doc(db, 'scheduledMessages', docRef.id), {
         status: 'failed',
         error: `Server returned: ${response.status} ${response.statusText}`
@@ -90,7 +91,7 @@ export const scheduleMessage = async (userId, channelId, message, scheduledTime)
     
     // Get the response data
     const data = await response.json();
-    console.log('Backend scheduling response:', data);
+    logger.info('Backend scheduling response successful');
 
     return docRef.id;
   } catch (error) {

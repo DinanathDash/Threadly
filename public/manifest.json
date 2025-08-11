@@ -1,0 +1,23 @@
+{
+  "name": "Threadly - Slack Connect",
+  "short_name": "Threadly",
+  "description": "Connect your Slack workspace, send messages immediately, and schedule messages for future delivery.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4A154B",
+  "icons": [
+    {
+      "src": "/src/assets/Logo.svg",
+      "sizes": "1391x300",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/src/assets/Logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

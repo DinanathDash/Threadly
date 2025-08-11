@@ -2,6 +2,7 @@
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { getApiUrl } from '../config/api';
+import * as logger from '../lib/logger';
 
 // Get all channels for the current user
 export const getChannels = async (userId) => {
@@ -10,7 +11,7 @@ export const getChannels = async (userId) => {
       throw new Error('User ID is missing. Please log in again.');
     }
     
-    console.log('Fetching channels for user ID:', userId);
+    logger.info('Fetching channels');
     const response = await fetch(getApiUrl(`/api/channels/channels?userId=${userId}`));
     
     if (!response.ok) {

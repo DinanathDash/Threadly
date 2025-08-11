@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSlack } from '../context/SlackContext';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalLoading } from '../context/GlobalLoadingContext';
+import * as logger from '../lib/logger';
 import { Button } from '@/components/ui/button';
 import {
   Home,
@@ -120,11 +121,6 @@ export default function MainLayout() {
     const interval = setInterval(() => {
       simulateNewNotification();
     }, Math.random() * 30000 + 30000);
-
-    // Request browser notification permissions
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
 
     return () => clearInterval(interval);
   }, [isConnected]);
@@ -447,11 +443,11 @@ export default function MainLayout() {
                         alt={currentUser?.displayName || 'User'}
                         onError={(e) => {
                           const error = e?.target?.error;
-                          console.log('Profile image failed to load, using fallback', error);
+                          logger.info('Profile image failed to load, using fallback');
 
                           // Handle rate limiting specifically (429 error)
                           if (error && error.message && error.message.includes('429')) {
-                            console.warn('Rate limit detected when loading profile image');
+                            logger.warn('Rate limit detected when loading profile image');
                             // Store a flag in localStorage to remember rate limiting for this user
                             localStorage.setItem(`image_rate_limited_${currentUser.uid}`, 'true');
                           }

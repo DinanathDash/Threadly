@@ -14,6 +14,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import LoadingScreen from '@/components/LoadingScreen';
+import * as logger from '../lib/logger';
 
 // Create the authentication context
 const AuthContext = createContext();
@@ -42,7 +43,7 @@ export function AuthProvider({ children }) {
     
     // If we've detected rate limiting for this user before, don't even try to load the image
     if (isRateLimited) {
-      console.log('Using fallback for rate-limited profile image');
+      logger.info('Using fallback for rate-limited profile image');
       return null;
     }
     
@@ -55,7 +56,7 @@ export function AuthProvider({ children }) {
         // Force a small image size
         return user.photoURL.replace('s96-c', 's24-c').replace('s128', 's24');
       } catch (error) {
-        console.warn('Error parsing profile image URL:', error);
+        logger.warn('Error parsing profile image URL:', error);
         return null;
       }
     }
@@ -70,7 +71,7 @@ export function AuthProvider({ children }) {
     const rateLimitKey = `image_rate_limited_${currentUser.uid}`;
     localStorage.removeItem(rateLimitKey);
     setProfileImageError(false);
-    console.log('Cleared rate limit flags for profile images');
+    logger.info('Cleared rate limit flags for profile images');
   };
 
   // Sign in with Google
@@ -173,7 +174,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log('User authenticated, uid:', user.uid);
+        logger.info('User authenticated');
         // Store userId in localStorage for API calls
         localStorage.setItem('userId', user.uid);
         
@@ -181,7 +182,7 @@ export function AuthProvider({ children }) {
         const userData = await getUserData(user.uid);
         setCurrentUser({ ...user, ...userData });
       } else {
-        console.log('User signed out');
+        logger.info('User signed out');
         setCurrentUser(null);
         // Clear userId from localStorage
         localStorage.removeItem('userId');
