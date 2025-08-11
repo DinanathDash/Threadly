@@ -352,7 +352,7 @@ export default function SendMessagePage() {
                           <span className="truncate">{date ? format(date, 'PPP') : 'Pick a date'}</span>
                         </div>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 max-w-[90vw] sm:max-w-none">
+                      <PopoverContent className="w-auto p-0 max-w-none rounded-lg">
                         <Calendar
                           mode="single"
                           selected={date}

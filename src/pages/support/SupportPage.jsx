@@ -7,19 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  SendIcon, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  SendIcon,
   X,
   MessageSquare,
   User
 } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogFooter,
   DialogDescription
@@ -37,7 +37,7 @@ export default function SupportPage() {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('new-ticket');
   const [loading, setLoading] = useState(false);
-  
+
   // New ticket form state
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -46,7 +46,7 @@ export default function SupportPage() {
   // State for tickets
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
-  
+
   // Ticket details modal state
   const [ticketDetailsOpen, setTicketDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -70,16 +70,16 @@ export default function SupportPage() {
         }
       }
     };
-    
+
     fetchTickets();
   }, [activeTab, currentUser]);
-  
+
   // Handle viewing ticket details
   const handleViewTicketDetails = async (ticketId) => {
     try {
       setLoadingTicketDetails(true);
       setTicketDetailsOpen(true);
-      
+
       const ticketData = await getTicketById(ticketId);
       setSelectedTicket(ticketData);
     } catch (error) {
@@ -90,39 +90,39 @@ export default function SupportPage() {
       setLoadingTicketDetails(false);
     }
   };
-  
+
   // Handle closing the ticket details modal
   const handleCloseTicketDetails = () => {
     setTicketDetailsOpen(false);
     setSelectedTicket(null);
     setTicketResponse('');
   };
-  
+
   // Handle submitting a response to a ticket
   const handleSubmitResponse = async (e) => {
     e.preventDefault();
-    
+
     if (!ticketResponse.trim() || !selectedTicket) {
       toast.error('Please enter a message');
       return;
     }
-    
+
     try {
       setSubmittingResponse(true);
-      
+
       await addTicketResponse(selectedTicket.id, {
         message: ticketResponse,
         isAdmin: false,
         userName: currentUser.displayName || currentUser.email.split('@')[0]
       });
-      
+
       // Refresh ticket details
       const updatedTicket = await getTicketById(selectedTicket.id);
       setSelectedTicket(updatedTicket);
-      
+
       // Clear response field
       setTicketResponse('');
-      
+
       toast.success('Response added successfully');
     } catch (error) {
       console.error('Error adding response:', error);
@@ -134,34 +134,34 @@ export default function SupportPage() {
 
   const handleTicketSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!subject.trim() || !message.trim()) {
       toast.error('Please complete all fields');
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // Send the ticket data to our backend using the supportService
       await submitSupportTicket({
         userId: currentUser.uid,
-        subject, 
-        message, 
+        subject,
+        message,
         priority,
         email: currentUser.email,
         name: currentUser.displayName || currentUser.email.split('@')[0]
       });
-      
+
       toast.success('Support ticket submitted successfully', {
         description: 'We will get back to you as soon as possible.'
       });
-      
+
       // Reset form
       setSubject('');
       setMessage('');
       setPriority('normal');
-      
+
       // Switch to tickets tab
       setActiveTab('my-tickets');
     } catch (error) {
@@ -180,14 +180,14 @@ export default function SupportPage() {
         <h1 className="text-2xl font-bold text-slate-800">Support Center</h1>
         <p className="text-slate-500 mt-1">Get help with Threadly or report issues</p>
       </div>
-      
+
       <Tabs defaultValue="new-ticket" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="new-ticket">New Support Ticket</TabsTrigger>
           <TabsTrigger value="my-tickets">My Tickets</TabsTrigger>
           <TabsTrigger value="help">Help Resources</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="new-ticket">
           <Card>
             <CardHeader>
@@ -200,32 +200,32 @@ export default function SupportPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject</Label>
-                  <Input 
-                    id="subject" 
-                    placeholder="Brief description of your issue" 
+                  <Input
+                    id="subject"
+                    placeholder="Brief description of your issue"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Please provide as much detail as possible about your issue" 
+                  <Textarea
+                    id="message"
+                    placeholder="Please provide as much detail as possible about your issue"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="min-h-[150px]"
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority</Label>
-                  <Select 
+                  <Select
                     defaultValue="normal"
-                    value={priority} 
+                    value={priority}
                     onValueChange={(value) => {
                       setPriority(value);
                     }}
@@ -245,7 +245,7 @@ export default function SupportPage() {
                 <div className="text-sm text-slate-500">
                   All fields are required
                 </div>
-                <Button 
+                <Button
                   type="submit"
                   disabled={loading}
                 >
@@ -267,7 +267,7 @@ export default function SupportPage() {
             </form>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="my-tickets">
           <Card>
             <CardHeader>
@@ -309,11 +309,11 @@ export default function SupportPage() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="mt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="text-xs"
                           onClick={() => handleViewTicketDetails(ticket.id)}
                         >
@@ -331,7 +331,7 @@ export default function SupportPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="help">
           <Card>
             <CardHeader>
@@ -349,41 +349,41 @@ export default function SupportPage() {
                   </p>
                   <ul className="space-y-2">
                     <li className="flex items-center">
-                      <span className="font-medium mr-2">Email:</span> 
+                      <span className="font-medium mr-2">Email:</span>
                       <a href="mailto:dashdinanath056@gmail.com" className="text-indigo-600 hover:text-indigo-800">
                         dashdinanath056@gmail.com
                       </a>
                     </li>
                     <li className="flex items-center">
-                      <span className="font-medium mr-2">GitHub:</span> 
+                      <span className="font-medium mr-2">GitHub:</span>
                       <a href="https://github.com/DinanathDash" className="text-indigo-600 hover:text-indigo-800" target="_blank" rel="noopener noreferrer">
                         github.com/DinanathDash
                       </a>
                     </li>
                   </ul>
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-medium mb-2">Frequently Asked Questions</h3>
                   <div className="space-y-4">
                     <div className="border border-slate-200 rounded-lg p-4">
                       <h4 className="font-medium text-slate-900 mb-2">How do I connect my Slack workspace?</h4>
                       <p className="text-slate-600">
-                        To connect your Slack workspace, go to the Dashboard and click on the "Connect with Slack" button. 
+                        To connect your Slack workspace, go to the Dashboard and click on the "Connect with Slack" button.
                         Follow the authorization process to grant Threadly access to your workspace.
                       </p>
                     </div>
                     <div className="border border-slate-200 rounded-lg p-4">
                       <h4 className="font-medium text-slate-900 mb-2">Can I schedule recurring messages?</h4>
                       <p className="text-slate-600">
-                        Yes, you can schedule recurring messages. When creating a new message, select the "Make recurring" 
+                        Yes, you can schedule recurring messages. When creating a new message, select the "Make recurring"
                         option and choose your preferred frequency.
                       </p>
                     </div>
                     <div className="border border-slate-200 rounded-lg p-4">
                       <h4 className="font-medium text-slate-900 mb-2">What if my scheduled message fails to send?</h4>
                       <p className="text-slate-600">
-                        If a scheduled message fails to send, you'll receive a notification. You can view the details 
+                        If a scheduled message fails to send, you'll receive a notification. You can view the details
                         in the Scheduled Messages section and attempt to resend or edit the message.
                       </p>
                     </div>
@@ -394,7 +394,7 @@ export default function SupportPage() {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Ticket Details Modal */}
       <Dialog open={ticketDetailsOpen} onOpenChange={setTicketDetailsOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -411,11 +411,10 @@ export default function SupportPage() {
                 <h2 className='text-xl font-semibold'>Ticket Details</h2>
                 <DialogTitle className="text-xl flex justify-between items-center">
                   <span className='text-lg font-medium'>{selectedTicket.subject}</span>
-                  <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${
-                    selectedTicket.status === 'resolved' ? 'bg-green-100 text-green-800' : 
+                  <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${selectedTicket.status === 'resolved' ? 'bg-green-100 text-green-800' :
                     selectedTicket.status === 'open' ? 'bg-blue-100 text-blue-800' :
-                    'bg-amber-100 text-amber-800'
-                  }`}>
+                      'bg-amber-100 text-amber-800'
+                    }`}>
                     {selectedTicket.status === 'resolved' ? (
                       <><CheckCircle size={12} className="mr-1" /> Resolved</>
                     ) : selectedTicket.status === 'open' ? (
@@ -495,7 +494,10 @@ export default function SupportPage() {
                         placeholder="Type your response here..."
                         className="min-h-[100px] mb-3"
                       />
-                      <div className="flex justify-end">
+                      <div className="flex justify-between">
+                        <Button variant="outline" onClick={handleCloseTicketDetails}>
+                          Close
+                        </Button>
                         <Button type="submit" disabled={submittingResponse}>
                           {submittingResponse ? (
                             <>
@@ -516,12 +518,6 @@ export default function SupportPage() {
                   </div>
                 )}
               </div>
-              
-              <DialogFooter className="mt-6">
-                <Button variant="outline" onClick={handleCloseTicketDetails}>
-                  Close
-                </Button>
-              </DialogFooter>
             </>
           ) : (
             <div className="py-8 text-center text-slate-500">

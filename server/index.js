@@ -54,6 +54,7 @@ app.get('/oauth/callback', (req, res) => {
   logger.info('OAuth callback received:');
   logger.info('Code:', code ? `Present (length: ${code.length})` : 'Not present');
   logger.info('Error:', error || 'None');
+  logger.info('FRONTEND_URL:', process.env.FRONTEND_URL);
   
   if (code) {
     // Add timestamp to prevent code reuse issues
@@ -65,7 +66,14 @@ app.get('/oauth/callback', (req, res) => {
   }
   
   logger.info('Redirecting to:', redirectUrl.toString());
-  res.redirect(redirectUrl.toString());
+  
+  // Add error handling for the redirect
+  try {
+    res.redirect(redirectUrl.toString());
+  } catch (redirectError) {
+    logger.error('Error during redirect:', redirectError);
+    res.status(500).send(`Redirect error: ${redirectError.message}. Please contact support.`);
+  }
 });
 
 // Health check route for SSL verification

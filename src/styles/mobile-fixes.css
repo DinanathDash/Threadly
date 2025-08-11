@@ -2,6 +2,14 @@
 
 /* Fix for mobile sidebar positioning */
 @media (max-width: 767px) {
+  /* Login page mobile fixes */
+  .auth-page-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
   body.sidebar-open {
     overflow: hidden; /* Prevent scrolling when sidebar is open */
   }

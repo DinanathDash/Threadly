@@ -43,11 +43,7 @@ function App() {
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<LoginPage />} />
-                  <Route path="/oauth-callback" element={
-                    <ProtectedRoute>
-                      <OAuthCallbackPage />
-                    </ProtectedRoute>
-                  } />
+                  <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
                   <Route path="/slack-test" element={
                     <ProtectedRoute>
                       <SlackTestPage />

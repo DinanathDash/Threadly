@@ -143,11 +143,9 @@ export default function OAuthCallbackPage() {
       const userId = currentUser?.uid || sessionStorage.getItem('connectingUserId') || localStorage.getItem('userId');
       
       if (!userId) {
-        toast.error('User ID not found', {
-          description: 'Please try logging in again.',
-        });
-        setError('User ID not found. Please try logging in again.');
-        return;
+        logger.warn('User ID not found in current session, proceeding with anonymous processing');
+        // Instead of showing an error and stopping, we'll continue the process
+        // The backend should handle authentication appropriately
       }
       
       logger.info(`Processing OAuth callback`);

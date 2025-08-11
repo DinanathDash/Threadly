@@ -67,6 +67,15 @@
   animation: cardAppear 0.6s ease-out;
 }
 
+/* Mobile responsive adjustments */
+@media (max-width: 767px) {
+  .login-card {
+    margin-top: 0;
+    margin-bottom: 0;
+    height: auto;
+  }
+}
+
 /* Right panel floating animations */
 @keyframes float {
   0%, 100% {
